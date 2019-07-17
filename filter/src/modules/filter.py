@@ -62,14 +62,14 @@ class Filter():
             return False
         # Displacement and uncertainty 
         sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
+        direction = 1.0
+        if(self.direction is not None):
+            direction = self.direction
         var_Delta_S = (self.Delta_T**2.0) * (sigma_Delta_v**2.0)
-        delta_S =  v * self.Delta_T
+        delta_S =  v * self.Delta_T * direction
         # Estimation
         self.d_x += delta_S
         self.P = self.P + var_Delta_S
-
-        print("S: {}".format(self.S))
-        print("P: {}".format(self.P))
         if(self.direction is not None):
             self.S = self.S + delta_S
             return False
@@ -89,9 +89,9 @@ class Filter():
         d_l = omega * cos(psi)
         sigma_d_l = self.sigma_omega * cos(psi)
         if(l is None):
-            return False
+            raise "No landmark was provided."
         if(self.l is None):
-            self.S = l - d_l
+            self.S = l
             self.P = (self.sigma_L ** 2.0) + ( sigma_d_l ** 2.0)
             self.l = l
             self.d_l = d_l
@@ -101,11 +101,11 @@ class Filter():
             self.direction = sign(l - self.l)
             self.d_x *= self.direction
             self.S = self.S + self.d_x
-        
+
         # Measurement and uncertainty handler
-        z = l - self.l + self.d_l - d_l
-        h = self.d_x
-        R = (2.0 * self.sigma_L**2.0) + sigma_d_l ** 2.0 + self.sigma_d_l ** 2.0
+        z = l - d_l * self.direction
+        h = self.S
+        R = (self.sigma_L**2.0) + (sigma_d_l**2.0)
 
         # Kalman Update
         K = self.P / (self.P + R)
@@ -119,13 +119,15 @@ class Filter():
         self.sigma_d_l = sigma_d_l
         self.S = S_est
         self.P = P_est
+        self.d_x = 0
         return True
 
     def __init__(self):
         self.S = 0.0
-        self.P = 1e10
-        self.Delta_T = 1e-3
-        self.sigma_L = (100.0/3.0)
+        self.P = 1e6
+        self.Delta_T = 1e-2
+        #self.sigma_L = (100.0/3.0)
+        self.sigma_L = 0
         self.sigma_omega = 1e-1
         self.clear()
         return
@@ -135,10 +137,3 @@ class Filter():
         self.l = None
         self.direction = None
         return 
-
-def main():
-    f = Filter()
-    return
-
-if __name__=="__main__":
-    main()
