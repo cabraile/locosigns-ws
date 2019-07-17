@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from matplotlib.pyplot import *
 from matplotlib.patches import Ellipse
 from modules.filter import *
