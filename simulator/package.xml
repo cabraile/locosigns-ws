@@ -1,8 +1,8 @@
 <package format="2">
-  <name>locosigns_filter</name>
+  <name>locosigns_simulator</name>
   <version>0.0.1</version>
   <description>
-    Filters the robot position on the road given its velocity and detected landmarks
+    Simulation of the robot's sensors' measurements and position on the world.
   </description>
   <maintainer email="carlos.andre.filho@usp.br">André Przewodowski</maintainer>
   <license>BSD</license>
@@ -13,6 +13,9 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>rospy</build_depend>
+  <build_depend>gazebo_ros</build_depend>
+  
+  <exec_depend>gazebo_ros</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>message_runtime</exec_depend>
 </package>
