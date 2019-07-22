@@ -23,17 +23,26 @@ class FilterNode():
         return
 
     def run(self):
-        rospy.spin()
+        rate = rospy.Rate(self.update_rate)
+        while not rospy.is_shutdown():
+            self.state_pub.publish(self.filter.S)
+            self.state_var_pub.publish(self.filter.P)
+            rate.sleep()
         return
 
     def __init__(self):
+        rospy.init_node("filter_node", anonymous=False)
+
         # Inner modules init
-        self.filter = Filter() # TODO: ADD PARAMETRIZATION CONF
+        self.update_rate = 100
+        self.Delta_T = 1./self.update_rate
+        self.filter = Filter(self.Delta_T, sigma_L = 0.0, sigma_omega = 0.0)
 
         # ROS init
-        rospy.init_node("filter_node", anonymous=False)
         rospy.Subscriber("robot_msgs/velocity", Float64, self.velocityCallback)
         rospy.Subscriber("robot_msgs/landmark", Float64MultiArray, self.landmarkCallback)
+        self.state_pub = rospy.Publisher("state/filter/position", Float64)
+        self.state_var_pub = rospy.Publisher("state/filter/position_variance", Float64)
         return
     
 if __name__=="__main__":

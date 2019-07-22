@@ -66,8 +66,8 @@ class Filter():
         direction = 1.0
         if(self.direction is not None):
             direction = self.direction
-        var_Delta_S = (self.Delta_T**2.0) * (sigma_Delta_v**2.0)
-        delta_S =  v * self.Delta_T * direction
+        var_Delta_S = (Delta_T**2.0) * (sigma_Delta_v**2.0)
+        delta_S =  v * Delta_T * direction
         # Estimation
         self.d_x += delta_S
         self.P = self.P + var_Delta_S
