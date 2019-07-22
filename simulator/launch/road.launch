@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+    <arg name="debug" default="false" />
+    <arg name="gui" default="false" />
+    <arg name="paused" default="false"/>
+    <arg name="world" default="$(find locosigns_simulator)/worlds/road.world"/>
+    <param name="bot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
+    <param name="bot_model_xacro" command="$(find xacro)/xacro --inorder '$(find prius_description)/urdf/prius.urdf'"/>
+
+    <!-- Include gazebo-ros magic-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"> <!-- it is 'empty_world' no matter the world you use -->
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="true"/>
+    </include>
+
+    <!-- Broadcasts robot odometry from the simulator - poor odometry -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="very_inaccurate_odom" args="0 0 0 0 0 0 odom base_link"/>    
+    <!-- True robot state on the simulation -->
+    <node pkg="fake_localization" type="fake_localization" name="fake_localization"/>
+
+    <!-- Manual actuation -->
+    <node pkg="locosigns_simulator" type="controller_node.py" name="controller_node"/>
+    
+    <!-- Converts commands to robot actions -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" >
+        <remap from="robot_description" to="bot_model"/>
+    </node>
+
+    <!-- Spawn the robot -->
+    <node name="spawn_prius" pkg="gazebo_ros" type="spawn_model" output="screen" 
+        args="-param bot_model -urdf -model prius -x 0 -y -1.5 -z 0" 
+    />
+
+    <node name="rviz" pkg="rviz" type="rviz"/>
+</launch>

@@ -123,13 +123,20 @@ class Filter():
         self.d_x = 0
         return True
 
-    def __init__(self):
+    def __init__(self, Delta_T, sigma_L, sigma_omega):
+        """
+        Params
+        ---------------
+        sigma_L: float.
+            The standard deviation associated to the position of the landmark in the environment, in meters.
+        sigma_omega: float.
+            The standard deviation associated to the depth measured by the sensor, in meters.
+        """
         self.S = 0.0
         self.P = 1e6
-        self.Delta_T = 1e-2
-        #self.sigma_L = (100.0/3.0)
-        self.sigma_L = 0
-        self.sigma_omega = 1e-1
+        self.Delta_T = Delta_T
+        self.sigma_L = sigma_L
+        self.sigma_omega = sigma_omega
         self.clear()
         return
     
