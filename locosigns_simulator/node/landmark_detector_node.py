@@ -1,16 +1,27 @@
 #!/usr/bin/env python
 import rospy
 from numpy import *
-from std_msgs.msg import Float64, Float64MultiArray
+from std_msgs.msg import Header
+from locosigns_msg.msg import Scalar, Landmark
 
 # TODO ASSUMES THAT THE ROBOT IS MOVING FORWARD
 # TODO ADD NOISE
-
+# TODO ADD PSI
 DETECTION_RATE = 0.7
 
 class LandmarkDetector():
 
-    def positionCallback(msg):
+    def prepareMessage(self, label, dist, heading_angle):
+        _header = Header()
+        _header.stamp = rospy.Time.now()
+        _landmark_msg = Landmark()
+        _landmark_msg.header = _header
+        _landmark_msg.label = label
+        _landmark_msg.measured_distance = dist
+        _landmark_msg.heading_angle = heading_angle
+        return _landmark_msg
+
+    def positionCallback(self,msg):
         pos = msg.data
         last_l = self.last_l
         l_detected = None
@@ -32,19 +43,20 @@ class LandmarkDetector():
         # publish
         if(l_detected is None):
             return
-        new_msg = Float64MultiArray([l_detected, l_dist])
+        
+        new_msg = self.prepareMessage(l_detected, l_dist, 0.0)
         self.publisher.publish(new_msg)
         return
 
     def __generateLandmarks(self):
-        self.landmark_list = [1000 * i for i in range(1, 101)]
+        self.landmark_list = [(1000.0 * i)  for i in range(0, 100)]
         self.last_l = None
         return
 
     def __init__(self):
         self.__generateLandmarks()
-        rospy.Subscriber("/state/groundtruth/position", Float64, self.positionCallback)
-        self.publisher = rospy.Publisher("/sensor/landmark", Float64MultiArray,queue_size=10)
+        rospy.Subscriber("/state/groundtruth/position", Scalar, self.positionCallback)
+        self.publisher = rospy.Publisher("/sensor/landmark", Landmark,queue_size=10)
         rospy.spin()
         return
 

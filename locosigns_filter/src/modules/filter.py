@@ -61,6 +61,7 @@ class Filter():
         # If there is no previous landmark detected
         if(self.l is None):
             return False
+        Delta_T = self.Delta_T
         # Displacement and uncertainty 
         sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
         direction = 1.0
@@ -97,6 +98,8 @@ class Filter():
             self.l = l
             self.d_l = d_l
             self.sigma_d_l = sigma_d_l
+            return False
+        if(self.l == l):
             return False
         if(self.direction is None):
             self.direction = sign(l - self.l)

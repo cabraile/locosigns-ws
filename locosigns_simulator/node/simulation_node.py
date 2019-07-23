@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-
 import rospy 
 import rospkg 
-from std_msgs.msg import Float64, Float64MultiArray
+from std_msgs.msg import Header
+from locosigns_msg.msg import Scalar
 from gazebo_msgs.msg import ModelState 
 from gazebo_msgs.srv import SetModelState
 
 class Controller():
 
     def __init__(self):
-        self.S = 0.0
-        self.update_rate = 10 # hertz
+        self.S = 850.0
+        self.update_rate = 100 # hertz
         self.velocity = 15.0 # meters per second
-        self.state_velocity_pub = rospy.Publisher("/state/groudtruth/velocity", Float64)
-        self.state_position_pub = rospy.Publisher("/state/groudtruth/position", Float64)
+        self.state_position_pub = rospy.Publisher("/state/groundtruth/position", Scalar, queue_size=1)
+        self.state_velocity_pub = rospy.Publisher("/state/groundtruth/velocity", Scalar, queue_size=1)
         return
 
     # COMUNICATION
@@ -24,7 +24,7 @@ class Controller():
         state_msg = ModelState()
         state_msg.model_name = 'prius'
         state_msg.pose.position.x = self.S
-        state_msg.pose.position.y = 0
+        state_msg.pose.position.y = -1.5
         state_msg.pose.position.z = 0.0
         state_msg.pose.orientation.x = 0
         state_msg.pose.orientation.y = 0
@@ -41,9 +41,14 @@ class Controller():
         return
 
     def __rosBroadcast(self):
-        curr_time = rospy.get_rostime()
-        self.state_position_pub.publish(self.S)
-        self.state_velocity_pub.publish(self.velocity)
+        _pos_msg = Scalar()
+        _vel_msg = Scalar()
+        _pos_msg.header.stamp = rospy.get_rostime()
+        _vel_msg.header.stamp = rospy.get_rostime()
+        _pos_msg.data = self.S
+        _vel_msg.data = self.velocity
+        self.state_position_pub.publish(_pos_msg)
+        self.state_velocity_pub.publish(_vel_msg)
         return
      
     def __broadcast(self):

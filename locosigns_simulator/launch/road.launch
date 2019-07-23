@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+    <!-- ARGS AND PARAMS -->
+    <!-- ======================= -->
+    <!-- Gazebo args -->
+    <arg name="debug" default="false" />
+    <arg name="gui" default="false" />
+    <arg name="paused" default="false"/>
+    <!-- The world in which the robot is spawned -->
+    <arg name="world" default="$(find locosigns_simulator)/worlds/road.world"/>
+    <!-- The robot's description file to be loaded -->
+    <param name="bot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
+    <!-- Simulation parameters (in the Intarnal Unit Standard)-->
+    <arg name="robot_velocity" default="20.0"/>
+    <arg name="spawn_heading" default="0.0"/>
+    <arg name="spawn_x" default="-50.0"/>
+    <arg name="spawn_y" default="-1.5"/>
+    <arg name="spawn_z" default="0.0"/>
+    <!-- ======================= -->
+
+    <!-- GAZEBO -->
+    <!-- ======================= -->
+    <!-- Include gazebo-ros magic-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"> <!-- it is 'empty_world' no matter the world you use -->
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="true"/>
+    </include>
+    <!-- Spawn the robot -->
+    <node name="spawn_prius" pkg="gazebo_ros" type="spawn_model" output="screen" 
+        args="-param bot_model -urdf -model prius -x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z)" 
+    />
+    <!-- ======================= -->
+    
+    <!-- SIMULATION -->
+    <!-- ======================= -->
+    <!-- Head of the simulation: moves the objects and broadcasts the robot state -->
+    <!-- Delay between the spawning the robot and starting the simulation -->
+    <arg name="node_start_delay" default="10.0" />
+    <node pkg="locosigns_simulator" 
+        type="simulation_node.py" 
+        name="simulation_node" 
+        output="screen"
+        args="-x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z) -heading $(arg spawn_heading) -velocity $(arg robot_velocity)"
+        launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
+    />
+    <!-- Simulation of the sensors -->
+    <node pkg="locosigns_simulator" type="landmark_detector_node.py" name="sim_landmark_detector_node"/>
+    <node pkg="locosigns_simulator" type="velocimeter.py" name="sim_velocimeter_node"/>
+    <!-- Filter -->
+    <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen" />
+    <!-- ======================= -->
+</launch>

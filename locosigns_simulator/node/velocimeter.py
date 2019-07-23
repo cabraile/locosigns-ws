@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import rospy
 from numpy import *
-from std_msgs.msg import Float64
+from std_msgs.msg import Header
+from locosigns_msg.msg import Scalar
 
 class Velocimeter():
 
@@ -13,8 +14,8 @@ class Velocimeter():
         return
 
     def __init__(self):
-        rospy.Subscriber("/state/groundtruth/velocity", Float64, self.velocityCallback)
-        self.publisher = rospy.Publisher("/sensor/velocity", Float64,queue_size=10)
+        rospy.Subscriber("/state/groundtruth/velocity", Scalar, self.velocityCallback)
+        self.publisher = rospy.Publisher("/sensor/velocity", Scalar,queue_size=10)
         rospy.spin()
         return
 

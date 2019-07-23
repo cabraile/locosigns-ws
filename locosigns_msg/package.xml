@@ -1,0 +1,19 @@
+<package format="2">
+  <name>locosigns_msg</name>
+  <version>0.0.1</version>
+  <description>
+    Filters the robot position on the road given its velocity and detected landmarks
+  </description>
+  <maintainer email="carlos.andre.filho@usp.br">André Przewodowski</maintainer>
+  <license>BSD</license>
+
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+
+  <build_depend>message_generation</build_depend>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>rospy</build_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+</package>
