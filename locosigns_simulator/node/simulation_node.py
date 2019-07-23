@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy 
+import numpy
 import rospkg 
 from std_msgs.msg import Header
 from locosigns_msg.msg import Scalar
@@ -9,9 +10,20 @@ from gazebo_msgs.srv import SetModelState
 class Controller():
 
     def __init__(self):
-        self.S = 850.0
+        rospy.init_node("simulation_node")
+        # Load args
+        self.x = rospy.get_param("~x", 0.0) # meters
+        self.y = rospy.get_param("~y", -1.5) # meters
+        self.z = rospy.get_param("~z", 0.0) # meters
+        self.heading = rospy.get_param("~heading", 0.0) # rads
+        self.velocity = rospy.get_param("~velocity", 15.0) # meters per second
+        self.direction = rospy.get_param("direction", 1) # 1=forward, -1=backwards
+        
+        # Init inner vars
+        self.S = self.x
         self.update_rate = 100 # hertz
-        self.velocity = 15.0 # meters per second
+
+        # Publishers
         self.state_position_pub = rospy.Publisher("/state/groundtruth/position", Scalar, queue_size=1)
         self.state_velocity_pub = rospy.Publisher("/state/groundtruth/velocity", Scalar, queue_size=1)
         return
@@ -28,7 +40,10 @@ class Controller():
         state_msg.pose.position.z = 0.0
         state_msg.pose.orientation.x = 0
         state_msg.pose.orientation.y = 0
-        state_msg.pose.orientation.z = 0
+        if(self.direction == 1):
+            state_msg.pose.orientation.z = self.heading
+        else:
+            state_msg.pose.orientation.z = numpy.pi - self.heading
         state_msg.pose.orientation.w = 0
         rospy.wait_for_service('/gazebo/set_model_state')
         try:
@@ -62,7 +77,7 @@ class Controller():
     # ========================
 
     def __update(self):
-        self.S += self.velocity * (1.0/(self.update_rate * 1.0) )
+        self.S += self.velocity * (1.0/(self.update_rate * 1.0) ) * (1.0 * self.direction)
         return
 
     def loop(self):
@@ -76,5 +91,4 @@ class Controller():
     # ========================
 
 if __name__ == '__main__':
-    rospy.init_node('simulation_node')
     Controller().loop()

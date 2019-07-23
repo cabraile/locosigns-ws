@@ -14,9 +14,12 @@
     <!-- Simulation parameters (in the Intarnal Unit Standard)-->
     <arg name="robot_velocity" default="20.0"/>
     <arg name="spawn_heading" default="0.0"/>
-    <arg name="spawn_x" default="-50.0"/>
+    <arg name="spawn_x" default="2250.0"/>
     <arg name="spawn_y" default="-1.5"/>
     <arg name="spawn_z" default="0.0"/>
+    <arg name="spawn_direction" default="-1"/> <!-- 1=forward; -1=backwards -->
+    <arg name="stdev_landmark" default="33.334"/> <!-- 1=forward; -1=backwards -->
+    <arg name="landmark_detection_rate" default="0.7"/> <!-- probability of detecting the landmark-->
     <!-- ======================= -->
 
     <!-- GAZEBO -->
@@ -37,18 +40,28 @@
     
     <!-- SIMULATION -->
     <!-- ======================= -->
-    <!-- Head of the simulation: moves the objects and broadcasts the robot state -->
+    <!-- Global parameters for simulation -->
+    <param name="direction" value="$(arg spawn_direction)"/>
+    <param name="stdev_landmark" value="$(arg stdev_landmark)"/>
     <!-- Delay between the spawning the robot and starting the simulation -->
     <arg name="node_start_delay" default="10.0" />
+    <!-- Head of the simulation: moves the objects and broadcasts the robot state -->
     <node pkg="locosigns_simulator" 
         type="simulation_node.py" 
         name="simulation_node" 
         output="screen"
-        args="-x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z) -heading $(arg spawn_heading) -velocity $(arg robot_velocity)"
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
-    />
+    >
+        <param name="x" value="$(arg spawn_x)"/>
+        <param name="y" value="$(arg spawn_y)"/>
+        <param name="z" value="$(arg spawn_z)"/>
+        <param name="heading" value="$(arg spawn_heading)"/>
+        <param name="velocity" value="$(arg robot_velocity)"/>
+    </node>
     <!-- Simulation of the sensors -->
-    <node pkg="locosigns_simulator" type="sim_landmark_detector_node.py" name="sim_landmark_detector_node"/>
+    <node pkg="locosigns_simulator" type="sim_landmark_detector_node.py" name="sim_landmark_detector_node" output="screen">
+        <param name="detection_rate" value="$(arg landmark_detection_rate)"/>
+    </node>
     <node pkg="locosigns_simulator" type="sim_velocimeter_node.py" name="sim_velocimeter_node"/>
     <!-- Filter -->
     <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen" />
