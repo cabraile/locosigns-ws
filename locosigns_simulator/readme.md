@@ -5,23 +5,23 @@ ROS/GAZEBO simulation package.
 FILES
 ==============================
 
-#Nodes
+# Nodes
 
 ROS nodes contained in `node/`.
 * `landmark_detector_node.py`: .
 * `simulation_node.py`: .
 * `velocimeter.py`: .
 
-#Worlds
+# Worlds
 
 Gazebo world files in `worlds/`.
 * `road.world` contains a straight road.
 
-#Models
+# Models
 
 Gazebo models to be loaded on the simulated world.
 
-#Launch
+# Launch
 
 Launch files that run all nodes and default parameters.
 * `road.launch` launches Gazebo; starts the simulation module ,which defines the path of the robot and update its true state); and runs the simulated sensors' drivers, which provide noisy measurement of the environment. The launch contains more details on its comments. 
