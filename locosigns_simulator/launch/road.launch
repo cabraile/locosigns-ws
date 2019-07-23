@@ -48,8 +48,8 @@
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
     />
     <!-- Simulation of the sensors -->
-    <node pkg="locosigns_simulator" type="landmark_detector_node.py" name="sim_landmark_detector_node"/>
-    <node pkg="locosigns_simulator" type="velocimeter.py" name="sim_velocimeter_node"/>
+    <node pkg="locosigns_simulator" type="sim_landmark_detector_node.py" name="sim_landmark_detector_node"/>
+    <node pkg="locosigns_simulator" type="sim_velocimeter_node.py" name="sim_velocimeter_node"/>
     <!-- Filter -->
     <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen" />
     <!-- ======================= -->
