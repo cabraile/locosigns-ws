@@ -14,6 +14,14 @@ class LandmarkDetector():
             self.position = position
             self.label = label
             return
+            
+    class Landmark3D():
+        def __init__(self, x, y, z, label):
+            self.position_x = x
+            self.position_y = y
+            self.position_z = z
+            self.label = label
+            return
 
     def _prepareMessage(self, label, dist, heading_angle):
         _header = Header()

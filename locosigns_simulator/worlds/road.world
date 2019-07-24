@@ -5,7 +5,6 @@
       <grid>false</grid>
     </scene>
     <!-- A global light source -->
-    <plugin name="pruis_hybrid_drive" filename="libPriusHybridPlugin.so"/>
     <include>
       <uri>model://sun</uri>
     </include>
