@@ -41,6 +41,9 @@ class Controller():
         self.state_velocity_pub = rospy.Publisher("/state/groundtruth/velocity", Scalar, queue_size=1)
         self.pose_pub = rospy.Publisher("/state/groundtruth/pose", Pose, queue_size=1)
         self.control_pub = rospy.Publisher('prius', Control, queue_size=1)
+
+        # Assures the vehicle did not move by any of the external forces of the simulation
+        self.__placeOnMap()
         return
 
     # COMUNICATION
@@ -84,10 +87,10 @@ class Controller():
         return
 
     def __gazeboBroadcast(self):
-        if not self.use_default_control:
-            self.__placeOnMap()
-        else:
+        if self.use_default_control:
             self.__defaultControlCall()
+        else:
+            self.__placeOnMap()
         return
 
     def __rosBroadcast(self):

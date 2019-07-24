@@ -2,6 +2,10 @@ ABOUT
 ==============================
 ROS/GAZEBO simulation package.
 
+NOTES
+==============================
+Before launching the simulation for the first time, after building the package, copy the `libPriusHybridPlugin.so` file to `plugins/` (tip: use `find -iname libPriusHybridPlugin.so` for finding it).
+
 FILES
 ==============================
 
@@ -11,6 +15,10 @@ ROS nodes contained in `node/`.
 * `landmark_detector_node.py`: .
 * `simulation_node.py`: .
 * `velocimeter.py`: .
+
+## Plugins
+They provide more functionalities for integrating ROS and Gazebo using URDF files (more [here](http://gazebosim.org/tutorials?tut=ros_gzplugins)).
+* `PriusHybridPlugin.*`: the header and the implementation of the plugin that converts `prius_msgs/Control` messages to actions in the simulation. This plugin was obtained from [this](https://github.com/osrf/car_demo) repository.
 
 ## Worlds
 
@@ -28,6 +36,5 @@ Launch files that run all nodes and default parameters.
 
 TODO
 ==============================
-- [ ] Add dummy models in the simulated world and detecting them.
-- [ ] Model the simulation to work with the true `x`, `y` and `z` axes, add heading control and make path non-linear.
-- [ ] Implement backwards compatibility
+- [ ] Add dummy models in the simulated world and detecting them (`sim_landmark_detector_node`).
+- [ ] Path generator

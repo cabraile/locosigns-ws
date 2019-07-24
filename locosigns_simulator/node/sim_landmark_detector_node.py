@@ -5,15 +5,10 @@ from std_msgs.msg import Header
 from locosigns_msg.msg import Scalar, Landmark
 
 # TODO PLACE THEM INTO THE 3D WORLD
+# TODO ADD THEM TO GAZEBO WORLD
 # TODO ADD PSI
 
 class LandmarkDetector():
-
-    class Landmark():
-        def __init__(self, position, label):
-            self.position = position
-            self.label = label
-            return
             
     class Landmark3D():
         def __init__(self, x, y, z, label):
@@ -63,10 +58,11 @@ class LandmarkDetector():
     def __generateLandmarks(self):
         self.landmark_list = []
         for i in range(0, 100):
+            _iter = len(self.landmark_list)
             label = (1000.0 * i)
             noise = (2.0 * random.rand() - 1 ) * self.stdev_landmark * 3.0
             position = label+noise
-            lmk = self.Landmark(position, label)
+            lmk = self.Landmark3D(x, y, z, label)
             self.landmark_list.append( lmk )
         self.last_l = None
         return
@@ -77,11 +73,20 @@ class LandmarkDetector():
         self.detection_rate = rospy.get_param("~detection_rate", 0.7)
         self.direction = rospy.get_param("direction")
         self.stdev_landmark = rospy.get_param("stdev_landmark")
+        self.path_period = rospy.get_param("path_period")
+        self.path_amplitude = rospy.get_param("~amplitude")
+
+        self.x_init = 0.0
+        self.y_init = 0.0
+        self.z_init = 0.0
+
         # Place landmarks on the environment
         self.__generateLandmarks()
+        
         # ROS communication
         rospy.Subscriber("/state/groundtruth/position", Scalar, self._positionCallback)
         self.publisher = rospy.Publisher("/sensor/landmark", Landmark,queue_size=10)
+
         # Loop
         rospy.spin()
         return

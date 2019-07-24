@@ -4,6 +4,7 @@
     <!-- ARGS AND PARAMS -->
     <!-- ======================= -->
     <!-- Gazebo args -->
+
     <arg name="debug" default="false" />
     <arg name="gui" default="false" />
     <arg name="verbose" default="true" />
@@ -16,12 +17,12 @@
     <arg name="robot_velocity" default="10.0"/>
     <arg name="spawn_heading" default="0.0"/>
     <arg name="spawn_x" default="0.0"/>
-    <arg name="spawn_y" default="-1.5"/>
+    <arg name="spawn_y" default="0.0"/>
     <arg name="spawn_z" default="0.0"/>
-    <arg name="spawn_direction" default="1"/> <!-- 1=forward; -1=backwards -->
+    <arg name="spawn_direction" default="1"/> <!-- 1=forward; -1=backwards; follows the road direction -->
     <arg name="stdev_landmark" default="33.334"/> <!-- 1=forward; -1=backwards -->
     <arg name="landmark_detection_rate" default="0.7"/> <!-- probability of detecting the landmark-->
-    <arg name="robot_sinusoidal_path_period" default="10"/> <!-- Amount of time required for the robot to complete a sine wave cycle in seconds (simulation_node and sim_landmark_detector_node) -->
+    <arg name="robot_sinusoidal_path_period" default="3"/> <!-- Amount of time required for the robot to complete a sine wave cycle in seconds (simulation_node and sim_landmark_detector_node) -->
     <!-- ======================= -->
 
     <!-- GAZEBO -->
@@ -37,14 +38,10 @@
         <arg name="verbose" value="$(arg verbose)"/>
     </include>
 
-
-  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
-    <remap from="robot_description" to="bot_model" /> -->
-  </node>
-  <node pkg="fake_localization" type="fake_localization" name="fake_localization"/>
-  <node pkg="tf2_ros" type="static_transform_publisher" name="very_inaccurate_odom" args="0 0 0 0 0 0 odom base_link"/>
-
-
+    <!-- Required for publishing the  -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <remap from="robot_description" to="bot_model" /> -->
+    </node>
     <!-- Spawn the robot -->
     <node name="spawn_prius" pkg="gazebo_ros" type="spawn_model" output="screen" 
         args="-param bot_model -urdf -model prius -x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z)" 
@@ -72,10 +69,12 @@
         <param name="heading" value="$(arg spawn_heading)"/>
         <param name="velocity" value="$(arg robot_velocity)"/>
     </node>
+
     <!-- Simulation of the sensors -->
     <!-- 
     <node pkg="locosigns_simulator" type="sim_landmark_detector_node.py" name="sim_landmark_detector_node" output="screen">
         <param name="detection_rate" value="$(arg landmark_detection_rate)"/>
+        <param name="amplitude" value="$(arg robot_velocity)">
     </node>
     <node pkg="locosigns_simulator" type="sim_velocimeter_node.py" name="sim_velocimeter_node"/>
     -->
