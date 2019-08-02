@@ -29,10 +29,35 @@
       </link>
       <static>true</static>
     </model>
-    <road name="road_0">
+    <road name="road">
       <width>7.34</width>
       <point>-10000 0 0</point> <!-- Start point-->
       <point>10000 0 0</point> <!-- End point -->
     </road>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_1</name>
+      <pose>900.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_2</name>
+      <pose>2010.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_3</name>
+      <pose>2957.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_4</name>
+      <pose>4002.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_5</name>
+      <pose>5040.0 -5 0 0 0 1.57079632679</pose>
+    </include>
   </world>
 </sdf>

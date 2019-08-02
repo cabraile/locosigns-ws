@@ -9,26 +9,27 @@
     <arg name="gui" default="false" />
     <arg name="verbose" default="true" />
     <arg name="paused" default="false"/>
+    <arg name="world_name" default="linear_road_noisy"/>
     <!-- The world in which the robot is spawned -->
-    <arg name="world" default="$(find locosigns_simulator)/worlds/road.world"/>
     <!-- The robot's description file to be loaded -->
     <param name="bot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
     <!-- Simulation parameters (in the Intarnal Unit Standard)-->
     <arg name="robot_velocity" default="10.0"/>
     <arg name="spawn_heading" default="0.0"/>
-    <arg name="spawn_x" default="0.0"/>
+    <arg name="spawn_x" default="-20.0"/>
     <arg name="spawn_y" default="0.0"/>
     <arg name="spawn_z" default="0.0"/>
     <arg name="spawn_direction" default="1"/> <!-- 1=forward; -1=backwards; follows the road direction -->
-    <arg name="stdev_landmark" default="33.334"/> <!-- 1=forward; -1=backwards -->
+    <arg name="stdev_landmark" default="33.3334"/> <!-- 1=forward; -1=backwards -->
     <arg name="landmark_detection_rate" default="0.7"/> <!-- probability of detecting the landmark-->
-    <arg name="robot_sinusoidal_path_period" default="3"/> <!-- Amount of time required for the robot to complete a sine wave cycle in seconds (simulation_node and sim_landmark_detector_node) -->
     <!-- ======================= -->
 
     <!-- GAZEBO -->
     <!-- ======================= -->
     <!-- Include gazebo-ros magic-->
     <env name="GAZEBO_PLUGIN_PATH" value="$(find locosigns_simulator)/plugins"/>
+    <env name="GAZEBO_MODEL_PATH" value="/home/braile/.gazebo/models"/>
+    <arg name="world" default="$(find locosigns_simulator)/worlds/$(arg world_name).world"/>
     <include file="$(find gazebo_ros)/launch/empty_world.launch"> <!-- it is 'empty_world' no matter the world you use -->
         <arg name="world_name" value="$(arg world)"/>
         <arg name="debug" value="$(arg debug)"/>
@@ -52,14 +53,12 @@
     <!-- ======================= -->
     <!-- Global parameters for simulation -->
     <param name="direction" value="$(arg spawn_direction)"/>
-    <param name="stdev_landmark" value="$(arg stdev_landmark)"/>
-    <param name="path_period" value="$(arg robot_sinusoidal_path_period)"/>
     <!-- Delay between the spawning the robot and starting the simulation -->
     <arg name="node_start_delay" default="10.0" />
     <!-- Head of the simulation: moves the objects and broadcasts the robot state -->
     <node pkg="locosigns_simulator" 
-        type="simulation_node.py" 
-        name="simulation_node" 
+        type="sim_control_node.py" 
+        name="sim_control_node" 
         output="screen"
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
     >
@@ -69,18 +68,21 @@
         <param name="heading" value="$(arg spawn_heading)"/>
         <param name="velocity" value="$(arg robot_velocity)"/>
     </node>
-
-    <!-- Simulation of the sensors -->
-    <!-- 
-    <node pkg="locosigns_simulator" type="sim_landmark_detector_node.py" name="sim_landmark_detector_node" output="screen">
+    <!-- Simulation of the sensors --> 
+    <node 
+        pkg="locosigns_simulator" 
+        type="sim_landmark_detector_node.py" 
+        name="sim_landmark_detector_node" 
+        output="screen"
+        launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
+    >
         <param name="detection_rate" value="$(arg landmark_detection_rate)"/>
-        <param name="amplitude" value="$(arg robot_velocity)">
+        <param name="stdev_landmark" value="$(arg stdev_landmark)"/>
     </node>
     <node pkg="locosigns_simulator" type="sim_velocimeter_node.py" name="sim_velocimeter_node"/>
-    -->
     <!-- Filter -->
-    <!--
-    <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen" />
-    -->
+    <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen">
+        <param name="stdev_landmark" value="$(arg stdev_landmark)"/>
+    </node>
     <!-- ======================= -->
 </launch>

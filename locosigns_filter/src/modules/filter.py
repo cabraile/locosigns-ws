@@ -64,16 +64,16 @@ class Filter():
         Delta_T = self.Delta_T
         # Displacement and uncertainty 
         sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
-        direction = 1.0
-        if(self.direction is not None):
-            direction = self.direction
+        #direction = 1.0
+        #if(self.direction is not None):
+        #    direction = self.direction
         var_Delta_S = (Delta_T**2.0) * (sigma_Delta_v**2.0)
-        delta_S =  v * Delta_T * direction
+        delta_S =  v * Delta_T #* direction
         # Estimation
         self.d_x += delta_S
         self.P = self.P + var_Delta_S
         if(self.direction is not None):
-            self.S = self.S + delta_S
+            self.S = self.S + (delta_S * self.direction)
             return False
         return True
 
@@ -94,7 +94,7 @@ class Filter():
             raise "No landmark was provided."
         if(self.l is None):
             self.S = l
-            self.P = (self.sigma_L ** 2.0) + ( sigma_d_l ** 2.0)
+            #self.P = (self.sigma_L ** 2.0) + ( sigma_d_l ** 2.0)
             self.l = l
             self.d_l = d_l
             self.sigma_d_l = sigma_d_l
@@ -103,8 +103,7 @@ class Filter():
             return False
         if(self.direction is None):
             self.direction = sign(l - self.l)
-            self.d_x *= self.direction
-            self.S = self.S + self.d_x
+            self.S = self.S + (self.d_x * self.direction)
 
         # Measurement and uncertainty handler
         z = l - d_l * self.direction
@@ -124,9 +123,10 @@ class Filter():
         self.S = S_est
         self.P = P_est
         self.d_x = 0
+
         return True
 
-    def __init__(self, Delta_T, sigma_L, sigma_omega):
+    def __init__(self, Delta_T, sigma_L, sigma_omega, S_init=0.0, P_init=1e6):
         """
         Params
         ---------------
@@ -135,8 +135,8 @@ class Filter():
         sigma_omega: float.
             The standard deviation associated to the depth measured by the sensor, in meters.
         """
-        self.S = 0.0
-        self.P = 1e6
+        self.S = S_init
+        self.P = P_init
         self.Delta_T = Delta_T
         self.sigma_L = sigma_L
         self.sigma_omega = sigma_omega

@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <world name="default">
+    <scene>
+      <grid>false</grid>
+    </scene>
+    <!-- A global light source -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- Invisible ground plane -->
+    <model name="ground">
+      <link name="body">
+        <collision name="geom">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+            </plane>
+          </geometry>
+          <surface>
+            <friction>
+              <ode>
+                <mu>100</mu>
+                <mu2>50</mu2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+      </link>
+      <static>true</static>
+    </model>
+    <road name="road">
+      <width>7.34</width>
+      <point>-10000 0 0</point> <!-- Start point-->
+      <point>10000 0 0</point> <!-- End point -->
+    </road>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_1</name>
+      <pose>1000.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_2</name>
+      <pose>2000.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_3</name>
+      <pose>3000.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_4</name>
+      <pose>4000.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+    <include>
+      <uri>model://speed_limit_sign</uri>
+      <name>landmark_5</name>
+      <pose>5000.0 -5 0 0 0 1.57079632679</pose>
+    </include>
+  </world>
+</sdf>
