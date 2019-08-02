@@ -3,11 +3,11 @@ import rospy
 import numpy
 import rospkg
 import tf
-from gazebo_msgs.srv import SetModelState
+from gazebo_msgs.srv import SetModelState, GetModelState
 from locosigns_msg.msg import Scalar, Pose
 from prius_msgs.msg import Control
 from gazebo_msgs.msg import ModelState 
-
+pi = numpy.pi
 class Controller():
 
     def __init__(self):
@@ -15,13 +15,14 @@ class Controller():
         # Load args
         self.iter = 0.0
         self.x = rospy.get_param("~x", 0.0)             # meters
-        self.y = rospy.get_param("~y", -1.5)            # meters
+        self.y = rospy.get_param("~y", 0.0)            # meters
         self.z = rospy.get_param("~z", 0.0)             # meters
         self.heading = rospy.get_param("~heading", 0.0) # rads
         self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
+        self.steering = rospy.get_param("~steering", 0.0)
+
         # Init args
         self.update_rate = 100.0
-        self.steering = 0 # rads
         if(self.direction < 0):
             self.heading = numpy.pi -self.heading
 
@@ -31,6 +32,12 @@ class Controller():
         self.body_wheel_base_length = 2.86012   # Specific to the prius model given (meters)
         self.body_track_width = 1.586           # Track width (meters)
         
+
+        # Span targets
+        self.model_state = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
+        self.curr_dummy_idx = 0 # Follows dummies on the road
+        self.spanTargetPositionDummies()
+
         # Publishers
         self.control_pub = rospy.Publisher('prius', Control, queue_size=1)
 
@@ -38,8 +45,51 @@ class Controller():
         self.placeRobotOnMap()
         return
 
+    # CONTROL
+    # 
+    def spanTargetPositionDummies(self):
+        self.position_dummies = []
+        R = 4000.0/numpy.pi
+        N = 1000.0
+        # Generate both semi-circles
+        X_sc_1 = numpy.linspace(0.0, 2.0 * R, N, endpoint=True)
+        Y_sc_1 = numpy.sqrt( (8000.0/numpy.pi) * X_sc_1 - numpy.square(X_sc_1) ) # Y values for the first semi-circle
+        X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N, endpoint=True)
+        Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / pi )) ) # Y values for the second semi-circle
+        # Append points sequentially - important
+        for idx in range(0,int(N)):
+            self.position_dummies.append( numpy.array([Y_sc_1[idx], X_sc_1[idx]]) )
+        for idx in range(0,int(N)):
+            self.position_dummies.append( numpy.array([Y_sc_2[idx], X_sc_2[idx]]) )
+        return
+
+    def getTargetSteering(self):
+        # Choose the closest dummy
+        dummy = self.position_dummies[self.curr_dummy_idx]
+        dist = numpy.sqrt((self.x - dummy[0] ) ** 2.0 + (self.y - dummy[1]) ** 2.0)
+        if(dist < 50):
+            self.curr_dummy_idx += 1
+            dummy = self.position_dummies[self.curr_dummy_idx]
+
+        # Get heading
+        delta_x = (dummy[0] - self.x )
+        delta_y = (dummy[1] - self.y)
+        self.steering = numpy.arctan2(delta_y, delta_x)
+        return
+
     # COMUNICATION
     # ========================
+
+    def getRobotState(self):
+        model_name = "prius"
+        state = self.model_state(model_name, "")
+        orient = state.pose.orientation
+        orient = numpy.array([orient.x, orient.y, orient.z, orient.w])
+        self.x = state.pose.position.x
+        self.y = state.pose.position.y
+        self.z = state.pose.position.z
+        _,_,self.heading = tf.transformations.euler_from_quaternion(orient)
+        return
 
     def placeRobotOnMap(self):
         """
@@ -75,7 +125,8 @@ class Controller():
         command_msg.brake = 0.0
         command_msg.shift_gears = Control.FORWARD
         # Normalize steer angle to [-1, 1]
-        steer = self.steering * 6.0 / numpy.pi
+        self.getTargetSteering()
+        steer = self.steering / numpy.pi
         command_msg.steer = steer
         self.control_pub.publish(command_msg)
         return
@@ -88,6 +139,7 @@ class Controller():
     def loop(self):
         loop_timer = rospy.Rate(self.update_rate)
         while(not rospy.is_shutdown()):
+            self.getRobotState()
             self.sendCtrlCmdsToGazebo()
             self.iter+=1
             loop_timer.sleep()

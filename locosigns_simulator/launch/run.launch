@@ -4,22 +4,22 @@
     <!-- ARGS AND PARAMS -->
     <!-- ======================= -->
     <!-- Gazebo args -->
-
     <arg name="debug" default="false" />
-    <arg name="gui" default="false" />
+    <arg name="gui" default="true" />
     <arg name="verbose" default="true" />
     <arg name="paused" default="false"/>
-    <arg name="world_name" default="linear_road_noisy"/>
+    <arg name="world_file" default="non_linear_road"/>
     <!-- The world in which the robot is spawned -->
     <!-- The robot's description file to be loaded -->
     <param name="bot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
     <!-- Simulation parameters (in the Intarnal Unit Standard)-->
     <arg name="robot_velocity" default="10.0"/>
     <arg name="spawn_heading" default="0.0"/>
-    <arg name="spawn_x" default="-20.0"/>
+    <arg name="spawn_x" default="0.0"/>
     <arg name="spawn_y" default="0.0"/>
     <arg name="spawn_z" default="0.0"/>
     <arg name="spawn_direction" default="1"/> <!-- 1=forward; -1=backwards; follows the road direction -->
+    <arg name="spawn_steering" default="0.78539816339"/>
     <arg name="stdev_landmark" default="33.3334"/> <!-- 1=forward; -1=backwards -->
     <arg name="landmark_detection_rate" default="0.7"/> <!-- probability of detecting the landmark-->
     <!-- ======================= -->
@@ -28,8 +28,8 @@
     <!-- ======================= -->
     <!-- Include gazebo-ros magic-->
     <env name="GAZEBO_PLUGIN_PATH" value="$(find locosigns_simulator)/plugins"/>
-    <env name="GAZEBO_MODEL_PATH" value="/home/braile/.gazebo/models"/>
-    <arg name="world" default="$(find locosigns_simulator)/worlds/$(arg world_name).world"/>
+    <env name="GAZEBO_MODEL_PATH" value="/home/braile/.gazebo/models"/> 
+    <arg name="world" default="$(find locosigns_simulator)/worlds/$(arg world_file).world"/>
     <include file="$(find gazebo_ros)/launch/empty_world.launch"> <!-- it is 'empty_world' no matter the world you use -->
         <arg name="world_name" value="$(arg world)"/>
         <arg name="debug" value="$(arg debug)"/>
@@ -66,7 +66,7 @@
         <param name="y" value="$(arg spawn_y)"/>
         <param name="z" value="$(arg spawn_z)"/>
         <param name="heading" value="$(arg spawn_heading)"/>
-        <param name="velocity" value="$(arg robot_velocity)"/>
+        <param name="steering" value="$(arg spawn_steering)"/>
     </node>
     <!-- Simulation of the sensors --> 
     <node 
