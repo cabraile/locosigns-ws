@@ -3,12 +3,19 @@ import rospy
 import numpy
 import rospkg
 import tf
-from gazebo_msgs.srv import SetModelState, GetModelState
+from gazebo_msgs.srv import SetModelState, GetModelState, SpawnModel
 from locosigns_msg.msg import Scalar, Pose
 from prius_msgs.msg import Control
 from gazebo_msgs.msg import ModelState 
+from geometry_msgs.msg import Point, Quaternion
+from geometry_msgs.msg import Pose as ROSPose
+
 pi = numpy.pi
 class Controller():
+
+    def velocityCallback(self, msg):
+        self.velocity = msg.data
+        return
 
     def __init__(self):
         rospy.init_node("sim_control_node")
@@ -20,7 +27,8 @@ class Controller():
         self.heading = rospy.get_param("~heading", 0.0) # rads
         self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
         self.steering = rospy.get_param("~steering", 0.0)
-
+        self.velocity = 0.0
+        self.target_velocity = 5.0
         # Init args
         self.update_rate = 100.0
         if(self.direction < 0):
@@ -31,7 +39,6 @@ class Controller():
         # Ackermann Steering - based on https://www.xarg.org/book/kinematics/ackerman-steering/
         self.body_wheel_base_length = 2.86012   # Specific to the prius model given (meters)
         self.body_track_width = 1.586           # Track width (meters)
-        
 
         # Span targets
         self.model_state = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
@@ -40,8 +47,11 @@ class Controller():
 
         # Publishers
         self.control_pub = rospy.Publisher('prius', Control, queue_size=1)
+        # Subscribers
+        rospy.Subscriber("/sim_sensor/velocity_groundtruth", Scalar, self.velocityCallback)
 
         # Assures the vehicle did not move by any of the external forces of the simulation
+        #self.placeDummiesOnMap()
         self.placeRobotOnMap()
         return
 
@@ -57,7 +67,7 @@ class Controller():
         X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N, endpoint=True)
         Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / pi )) ) # Y values for the second semi-circle
         # Append points sequentially - important
-        for idx in range(0,int(N)):
+        for idx in range(1,int(N)):
             self.position_dummies.append( numpy.array([Y_sc_1[idx], X_sc_1[idx]]) )
         for idx in range(0,int(N)):
             self.position_dummies.append( numpy.array([Y_sc_2[idx], X_sc_2[idx]]) )
@@ -67,14 +77,19 @@ class Controller():
         # Choose the closest dummy
         dummy = self.position_dummies[self.curr_dummy_idx]
         dist = numpy.sqrt((self.x - dummy[0] ) ** 2.0 + (self.y - dummy[1]) ** 2.0)
-        if(dist < 50):
+        if(dist < 0.3):
             self.curr_dummy_idx += 1
             dummy = self.position_dummies[self.curr_dummy_idx]
 
         # Get heading
         delta_x = (dummy[0] - self.x )
         delta_y = (dummy[1] - self.y)
-        self.steering = numpy.arctan2(delta_y, delta_x)
+        target_angle = numpy.arctan2(delta_y, delta_x)
+
+        # The robot needs to face the landmark, however it depends on the steering
+        error = target_angle - self.heading
+        target_steering = numpy.arctan(self.update_rate * error * self.body_wheel_base_length / (self.body_track_width) )
+        self.steering += (target_steering - self.steering)
         return
 
     # COMUNICATION
@@ -90,6 +105,20 @@ class Controller():
         self.z = state.pose.position.z
         _,_,self.heading = tf.transformations.euler_from_quaternion(orient)
         return
+
+    def placeDummiesOnMap(self):
+        rospy.wait_for_service("gazebo/spawn_sdf_model")
+        spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
+        with open("/home/braile/.gazebo/models/construction_cone/model.sdf", "r") as f:
+            model_xml = f.read()
+        for idx in range(0,30):
+            #for idx in range(len(self.position_dummies)):
+            dummy = self.position_dummies[idx]
+            name = "dummy_{}".format(idx)
+            rospy.loginfo("[sim_control_node.py] Spawning model: {}".format( name))
+            pose = ROSPose(Point(x=dummy[0], y=dummy[1], z=0.0),  Quaternion() )
+            spawn_model(name, model_xml, "", pose, "world")
+        return 
 
     def placeRobotOnMap(self):
         """
@@ -121,7 +150,12 @@ class Controller():
         """
         command_msg = Control()
         command_msg.header.stamp = rospy.get_rostime()
-        command_msg.throttle = 1.0
+        throttle = 0.0
+        if(self.velocity < self.target_velocity):
+            throttle = 0.4
+        else:
+            throttle = 0.2
+        command_msg.throttle = throttle
         command_msg.brake = 0.0
         command_msg.shift_gears = Control.FORWARD
         # Normalize steer angle to [-1, 1]
