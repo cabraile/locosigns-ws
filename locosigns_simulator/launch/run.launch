@@ -19,7 +19,7 @@
     <arg name="spawn_y" default="0.0"/>
     <arg name="spawn_z" default="0.0"/>
     <arg name="spawn_direction" default="1"/> <!-- 1=forward; -1=backwards; follows the road direction -->
-    <arg name="spawn_steering" default="0.78539816339"/>
+    <arg name="spawn_steering" default="0.0"/>
     <arg name="stdev_landmark" default="33.3334"/> <!-- 1=forward; -1=backwards -->
     <arg name="landmark_detection_rate" default="0.7"/> <!-- probability of detecting the landmark-->
     <!-- ======================= -->

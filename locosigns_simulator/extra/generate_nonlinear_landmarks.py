@@ -49,7 +49,7 @@ def genLandmarks(radius, alpha):
 
 def main():
     # Parameters
-    R = 4000.0 / pi # radius of the road (in meters)
+    R = 4000.0 / pi + 6.5 # radius of the road (in meters)
     alpha = pi/4.0 
     landmarks = genLandmarks(R, alpha)
     # Creates tracks and then flush them to the world file

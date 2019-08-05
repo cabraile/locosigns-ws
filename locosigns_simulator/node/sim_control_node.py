@@ -27,8 +27,14 @@ class Controller():
         self.heading = rospy.get_param("~heading", 0.0) # rads
         self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
         self.steering = rospy.get_param("~steering", 0.0)
+
+        # Init inner vars
+        curr_time = rospy.Time.now().to_sec()
         self.velocity = 0.0
-        self.target_velocity = 5.0
+        self.target_velocity = 15.0
+        self.accl = 0.0
+        self.lin_position = 0.0
+
         # Init args
         self.update_rate = 100.0
         if(self.direction < 0):
@@ -47,6 +53,7 @@ class Controller():
 
         # Publishers
         self.control_pub = rospy.Publisher('prius', Control, queue_size=1)
+        self.linear_position_pub = rospy.Publisher('/sim_sensor/linear_position', Scalar, queue_size=1)
         # Subscribers
         rospy.Subscriber("/sim_sensor/velocity_groundtruth", Scalar, self.velocityCallback)
 
@@ -61,16 +68,27 @@ class Controller():
         self.position_dummies = []
         R = 4000.0/numpy.pi
         N = 1000.0
+        skip = 5
         # Generate both semi-circles
-        X_sc_1 = numpy.linspace(0.0, 2.0 * R, N, endpoint=True)
+        X_sc_1 = numpy.linspace(0.0, 2.0 * R, N/skip, endpoint=True)
         Y_sc_1 = numpy.sqrt( (8000.0/numpy.pi) * X_sc_1 - numpy.square(X_sc_1) ) # Y values for the first semi-circle
-        X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N, endpoint=True)
+        X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N/skip, endpoint=True)
         Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / pi )) ) # Y values for the second semi-circle
         # Append points sequentially - important
-        for idx in range(1,int(N)):
+        for idx in range(1,int(N/skip)):
             self.position_dummies.append( numpy.array([Y_sc_1[idx], X_sc_1[idx]]) )
-        for idx in range(0,int(N)):
+        for idx in range(0,int(N/skip)):
             self.position_dummies.append( numpy.array([Y_sc_2[idx], X_sc_2[idx]]) )
+        return
+
+    def getTargetThrottle(self):
+        velocity_error = self.target_velocity - self.velocity
+        Delta_T = 1.0 / self.update_rate
+        p_term = 0.8 * velocity_error
+        i_term = 0.2 * velocity_error * Delta_T
+        d_term = 0.1 * velocity_error * self.update_rate
+        throttle =  p_term + i_term
+        self.throttle = min(1., max(0., throttle) )
         return
 
     def getTargetSteering(self):
@@ -87,9 +105,21 @@ class Controller():
         target_angle = numpy.arctan2(delta_y, delta_x)
 
         # The robot needs to face the landmark, however it depends on the steering
-        error = target_angle - self.heading
-        target_steering = numpy.arctan(self.update_rate * error * self.body_wheel_base_length / (self.body_track_width) )
-        self.steering += (target_steering - self.steering)
+        angle_error = target_angle - self.heading
+        #print(angle_error)
+        target_steering = numpy.arctan(self.update_rate * angle_error * self.body_wheel_base_length / (self.body_track_width) )
+        steering_error = target_steering - self.steering
+        #steering_error = angle_error
+        Delta_T = (1. / self.update_rate)
+        # PID
+        p_term = 0.05 * steering_error
+        i_term = 0.8 * steering_error * Delta_T
+        d_term = 0.9 * steering_error * self.update_rate
+        steering = self.steering + p_term + i_term + d_term
+        # Update
+        steering = max(-0.5, min(0.5, steering) ) # MAX STEERING ANGLE IS 0.8727 RAD ~ 50deg
+        self.steering = steering
+        #print(self.steering)
         return
 
     # COMUNICATION
@@ -98,12 +128,15 @@ class Controller():
     def getRobotState(self):
         model_name = "prius"
         state = self.model_state(model_name, "")
+        prev_pos = numpy.array([self.x, self.y, self.z])
         orient = state.pose.orientation
         orient = numpy.array([orient.x, orient.y, orient.z, orient.w])
         self.x = state.pose.position.x
         self.y = state.pose.position.y
         self.z = state.pose.position.z
         _,_,self.heading = tf.transformations.euler_from_quaternion(orient)
+        curr_pos = numpy.array([self.x, self.y, self.z])
+        self.lin_position += numpy.linalg.norm(curr_pos - prev_pos)
         return
 
     def placeDummiesOnMap(self):
@@ -111,8 +144,8 @@ class Controller():
         spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
         with open("/home/braile/.gazebo/models/construction_cone/model.sdf", "r") as f:
             model_xml = f.read()
-        for idx in range(0,30):
-            #for idx in range(len(self.position_dummies)):
+        #for idx in range(30):
+        for idx in range(len(self.position_dummies)):
             dummy = self.position_dummies[idx]
             name = "dummy_{}".format(idx)
             rospy.loginfo("[sim_control_node.py] Spawning model: {}".format( name))
@@ -150,19 +183,17 @@ class Controller():
         """
         command_msg = Control()
         command_msg.header.stamp = rospy.get_rostime()
-        throttle = 0.0
-        if(self.velocity < self.target_velocity):
-            throttle = 0.4
-        else:
-            throttle = 0.2
-        command_msg.throttle = throttle
+        command_msg.throttle = self.throttle
         command_msg.brake = 0.0
         command_msg.shift_gears = Control.FORWARD
-        # Normalize steer angle to [-1, 1]
-        self.getTargetSteering()
-        steer = self.steering / numpy.pi
+        steer = self.steering
         command_msg.steer = steer
         self.control_pub.publish(command_msg)
+
+        position_msg = Scalar()
+        position_msg.header.stamp = rospy.get_rostime()
+        position_msg.data = self.lin_position
+        self.linear_position_pub.publish(position_msg)
         return
 
     # ========================
@@ -174,6 +205,8 @@ class Controller():
         loop_timer = rospy.Rate(self.update_rate)
         while(not rospy.is_shutdown()):
             self.getRobotState()
+            self.getTargetThrottle()
+            self.getTargetSteering()
             self.sendCtrlCmdsToGazebo()
             self.iter+=1
             loop_timer.sleep()

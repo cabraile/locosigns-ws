@@ -63,7 +63,8 @@ class Filter():
             return False
         Delta_T = self.Delta_T
         # Displacement and uncertainty 
-        sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
+        #sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
+        sigma_Delta_v = 0.1 * v
         #direction = 1.0
         #if(self.direction is not None):
         #    direction = self.direction
