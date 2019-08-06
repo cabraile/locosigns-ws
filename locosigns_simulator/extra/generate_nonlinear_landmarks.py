@@ -17,39 +17,40 @@ def genLandmarks(radius, alpha):
     x_c_1 = radius
     x_c_2 = 3.0 * radius
     factor = radius * cos(alpha)
+    D = 7.5 # distance from the center of the road
     # Landmark 1
     _x = x_c_1 - factor
-    landmarks[0,0] = _x
-    landmarks[0,1] = sqrt( -_x**2.0 + 2.0*radius *_x  )
+    landmarks[0,0] = _x + cos(alpha) * D
+    landmarks[0,1] = sqrt( -_x**2.0 + 2.0*radius *_x  ) - sin(alpha) * D
     # Landmark 2
     landmarks[1,0] = radius
-    landmarks[1,1] = radius
+    landmarks[1,1] = radius - D
     # Landmark 3
     _x = x_c_1 + factor
-    landmarks[2,0] = _x
-    landmarks[2,1] = sqrt( -_x**2.0 + 2.0*radius *_x  ) 
+    landmarks[2,0] = _x - cos(alpha) * D
+    landmarks[2,1] = sqrt( -_x**2.0 + 2.0*radius *_x  )  - sin(alpha) * D
     # Landmark 4
-    landmarks[3,0] = 2.0 * radius
+    landmarks[3,0] = 2.0 * radius - D
     landmarks[3,1] = 0.0
     # Landmark 5
     _x = x_c_2 - factor
-    landmarks[4,0] = _x
-    landmarks[4,1] = - sqrt( radius**2.0 - (_x - x_c_2) ** 2.)
+    landmarks[4,0] = _x - cos(alpha) * D
+    landmarks[4,1] = - sqrt( radius**2.0 - (_x - x_c_2) ** 2.) - sin(alpha) * D
     # Landmark 6
     landmarks[5,0] = 3.0 * radius
-    landmarks[5,1] = -radius
+    landmarks[5,1] = -radius - D
     # Landmark 7
     _x = x_c_2 + factor
-    landmarks[6,0] = _x
-    landmarks[6,1] = - sqrt( radius**2.0 - (_x - x_c_2) ** 2.)
+    landmarks[6,0] = _x + cos(alpha) * D
+    landmarks[6,1] = - sqrt( radius**2.0 - (_x - x_c_2) ** 2.) - sin(alpha) * D
     # Landmark 2
-    landmarks[7,0] = 4*radius
+    landmarks[7,0] = 4*radius + D
     landmarks[7,1] = 0
     return landmarks
 
 def main():
     # Parameters
-    R = 4000.0 / pi + 6.5 # radius of the road (in meters)
+    R = 4000.0 / pi # radius of the road (in meters)
     alpha = pi/4.0 
     landmarks = genLandmarks(R, alpha)
     # Creates tracks and then flush them to the world file

@@ -135,7 +135,7 @@ class Controller():
         self.y = state.pose.position.y
         self.z = state.pose.position.z
         _,_,self.heading = tf.transformations.euler_from_quaternion(orient)
-        curr_pos = numpy.array([self.x, self.y, self.z])
+        curr_pos = numpy.array([self.x , self.y, self.z])
         self.lin_position += numpy.linalg.norm(curr_pos - prev_pos)
         return
 
