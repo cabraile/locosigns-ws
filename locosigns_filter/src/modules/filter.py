@@ -63,12 +63,9 @@ class Filter():
             return False
         Delta_T = self.Delta_T
         # Displacement and uncertainty 
-        #sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
-        sigma_Delta_v = 0.1 * v
-        #direction = 1.0
-        #if(self.direction is not None):
-        #    direction = self.direction
-        var_Delta_S = (Delta_T**2.0) * (sigma_Delta_v**2.0)
+        sigma_Delta_v = (0.1 * v / 3.0) # The deviance is somewhere around 10% of the velocimeter value. 
+        #sigma_Delta_v = 100
+        var_Delta_S = (Delta_T * sigma_Delta_v)**2.0
         delta_S =  v * Delta_T #* direction
         # Estimation
         self.d_x += delta_S
@@ -116,6 +113,8 @@ class Filter():
         innovation = (z - h)
         S_est = self.S + K * innovation
         P_est = (1 - K) * self.P
+
+	print("[Filter.py] Updating... K={} | P_prev={} | P_est={}".format(K, self.P, P_est))
 
         # Variable replacement
         self.l = l

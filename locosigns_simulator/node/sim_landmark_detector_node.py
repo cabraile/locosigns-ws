@@ -14,37 +14,6 @@ import geometry_msgs.msg
 from gazebo_msgs.srv import GetModelState
 from locosigns_msg.msg import Scalar, Landmark, Pose
 
-"""
-def setLmkSim(self):
-    rospy.wait_for_service("gazebo/spawn_sdf_model")
-    spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
-    quat = tf.transformations.quaternion_from_euler(0,0,pi/2.0)
-    
-    with open("{}/speed_limit_sign/model.sdf".format(os.environ["GAZEBO_MODEL_PATH"]), "r") as model:
-        model_xml = model.read()
-        for lmk in self.landmark_list:
-            model_pose = geometry_msgs.msg.Pose(geometry_msgs.msg.Point(x=lmk.position_x, y=lmk.position_y, z=lmk.position_z), 
-                geometry_msgs.msg.Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
-            )
-            spawn_model("lmk_{}".format(lmk.label), model_xml, "", model_pose, "world")
-    return
-
-def generateLandmarks(self):
-    self.landmark_list = []
-    self.last_l = None
-    for i in range(0, 30):
-        _iter = len(self.landmark_list)
-        label = (1000.0 * i)
-        noise = (2.0 * random.rand() - 1 ) * self.stdev_landmark * 3.0
-        x = label+noise
-        y = -4.5
-        z = 0.0
-        lmk = self.Landmark3D(x, y, z, label)
-        self.landmark_list.append( lmk )
-    self.setLmkSim()
-    return
-"""
-
 class LandmarkDetector():
     
     # LOOP
@@ -111,7 +80,7 @@ class LandmarkDetector():
     def __init__(self):
         # Init ROS and loads parameters
         rospy.init_node("sim_landmark_detector_node")
-        self.detection_rate = rospy.get_param("~detection_rate", 0.7)
+        self.detection_rate = rospy.get_param("~detection_rate", 1.0)
         self.stdev_landmark = rospy.get_param("~stdev_landmark")
 
         # Get the list of landmarks on the environment
@@ -137,7 +106,7 @@ class LandmarkDetector():
     def getLandmarkList(self):
         self.model_coordinates = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
         self.landmark_list = []
-        for i in range(1,5+1):
+        for i in range(1,8+1):
             l_name = "landmark_{}".format(i)
             state = self.model_coordinates(l_name, "")
             x = state.pose.position.x

@@ -12,9 +12,10 @@ FILES
 ## Nodes
 
 ROS nodes contained in `node/`.
-* `landmark_detector_node.py`: .
-* `simulation_node.py`: .
-* `velocimeter.py`: .
+* `sim_landmark_detector_node.py`: publishes the position, the distance from and the angle between the car and the detected landmark at `/sensor/landmark` as a `locosigns_msg.msg.Landmark` message.
+* `sim_control_node.py`: given the true position of the robot, sends the simulator commands to keep the car on the road. Also, publishes the best estimation of odometry, noiseless, at `/sim_sensor/linear_position` as a `locosigns_msg.msg.Scalar` message.
+* `sim_velocimeter_node.py`: this node captures the velocity between two time measurements. It publishes the true velocity at `/sim_sensor/velocity_groundtruth` and a noisy measurement (+- 10% of the true velocity) at `/sim_sensor/velocity`, both as `locosigns_msg.msg.Scalar` messages.
+* `sim_error_node.py`: measures the difference between the filtered state of the robot (both from `state/filter/odometry` and `state/filter/odometry_corrected`) and the ground truth position provided at `/sim_sensor/linear_position`.
 
 ## Plugins
 They provide more functionalities for integrating ROS and Gazebo using URDF files (more [here](http://gazebosim.org/tutorials?tut=ros_gzplugins)).

@@ -38,7 +38,7 @@ def genRoadPoints(radius, numbersamples):
 def main():
     # Parameters
     R = 4000.0 / pi # radius of the road (in meters)
-    N = 2000 # number of samples for the discretization
+    N = 400 # number of samples for the discretization
     list_points = genRoadPoints(R,N)
     # Creates tracks and then flush them to the world file
     worldfile = open("world_file.world","w")

@@ -8,31 +8,24 @@ from locosigns_msg.msg import Scalar, Pose
 from prius_msgs.msg import Control
 from gazebo_msgs.msg import ModelState 
 from geometry_msgs.msg import Point, Quaternion
-from geometry_msgs.msg import Pose as ROSPose
+from geometry_msgs.msg import Pose as GeometryPose
 
-pi = numpy.pi
 class Controller():
-
-    def velocityCallback(self, msg):
-        self.velocity = msg.data
-        return
 
     def __init__(self):
         rospy.init_node("sim_control_node")
         # Load args
-        self.iter = 0.0
         self.x = rospy.get_param("~x", 0.0)             # meters
         self.y = rospy.get_param("~y", 0.0)            # meters
         self.z = rospy.get_param("~z", 0.0)             # meters
         self.heading = rospy.get_param("~heading", 0.0) # rads
         self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
         self.steering = rospy.get_param("~steering", 0.0)
+        self.target_velocity = rospy.get_param("~target_velocity",15.0)
 
         # Init inner vars
         curr_time = rospy.Time.now().to_sec()
         self.velocity = 0.0
-        self.target_velocity = 15.0
-        self.accl = 0.0
         self.lin_position = 0.0
 
         # Init args
@@ -62,8 +55,9 @@ class Controller():
         self.placeRobotOnMap()
         return
 
-    # CONTROL
-    # 
+    # SIMULATION
+    # =======================
+
     def spanTargetPositionDummies(self):
         self.position_dummies = []
         R = 4000.0/numpy.pi
@@ -73,70 +67,12 @@ class Controller():
         X_sc_1 = numpy.linspace(0.0, 2.0 * R, N/skip, endpoint=True)
         Y_sc_1 = numpy.sqrt( (8000.0/numpy.pi) * X_sc_1 - numpy.square(X_sc_1) ) # Y values for the first semi-circle
         X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N/skip, endpoint=True)
-        Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / pi )) ) # Y values for the second semi-circle
+        Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / numpy.pi )) ) # Y values for the second semi-circle
         # Append points sequentially - important
         for idx in range(1,int(N/skip)):
             self.position_dummies.append( numpy.array([Y_sc_1[idx], X_sc_1[idx]]) )
         for idx in range(0,int(N/skip)):
             self.position_dummies.append( numpy.array([Y_sc_2[idx], X_sc_2[idx]]) )
-        return
-
-    def getTargetThrottle(self):
-        velocity_error = self.target_velocity - self.velocity
-        Delta_T = 1.0 / self.update_rate
-        p_term = 0.8 * velocity_error
-        i_term = 0.2 * velocity_error * Delta_T
-        d_term = 0.1 * velocity_error * self.update_rate
-        throttle =  p_term + i_term
-        self.throttle = min(1., max(0., throttle) )
-        return
-
-    def getTargetSteering(self):
-        # Choose the closest dummy
-        dummy = self.position_dummies[self.curr_dummy_idx]
-        dist = numpy.sqrt((self.x - dummy[0] ) ** 2.0 + (self.y - dummy[1]) ** 2.0)
-        if(dist < 0.3):
-            self.curr_dummy_idx += 1
-            dummy = self.position_dummies[self.curr_dummy_idx]
-
-        # Get heading
-        delta_x = (dummy[0] - self.x )
-        delta_y = (dummy[1] - self.y)
-        target_angle = numpy.arctan2(delta_y, delta_x)
-
-        # The robot needs to face the landmark, however it depends on the steering
-        angle_error = target_angle - self.heading
-        #print(angle_error)
-        target_steering = numpy.arctan(self.update_rate * angle_error * self.body_wheel_base_length / (self.body_track_width) )
-        steering_error = target_steering - self.steering
-        #steering_error = angle_error
-        Delta_T = (1. / self.update_rate)
-        # PID
-        p_term = 0.05 * steering_error
-        i_term = 0.8 * steering_error * Delta_T
-        d_term = 0.9 * steering_error * self.update_rate
-        steering = self.steering + p_term + i_term + d_term
-        # Update
-        steering = max(-0.5, min(0.5, steering) ) # MAX STEERING ANGLE IS 0.8727 RAD ~ 50deg
-        self.steering = steering
-        #print(self.steering)
-        return
-
-    # COMUNICATION
-    # ========================
-
-    def getRobotState(self):
-        model_name = "prius"
-        state = self.model_state(model_name, "")
-        prev_pos = numpy.array([self.x, self.y, self.z])
-        orient = state.pose.orientation
-        orient = numpy.array([orient.x, orient.y, orient.z, orient.w])
-        self.x = state.pose.position.x
-        self.y = state.pose.position.y
-        self.z = state.pose.position.z
-        _,_,self.heading = tf.transformations.euler_from_quaternion(orient)
-        curr_pos = numpy.array([self.x , self.y, self.z])
-        self.lin_position += numpy.linalg.norm(curr_pos - prev_pos)
         return
 
     def placeDummiesOnMap(self):
@@ -149,7 +85,7 @@ class Controller():
             dummy = self.position_dummies[idx]
             name = "dummy_{}".format(idx)
             rospy.loginfo("[sim_control_node.py] Spawning model: {}".format( name))
-            pose = ROSPose(Point(x=dummy[0], y=dummy[1], z=0.0),  Quaternion() )
+            pose = GeometryPose(Point(x=dummy[0], y=dummy[1], z=0.0),  Quaternion() )
             spawn_model(name, model_xml, "", pose, "world")
         return 
 
@@ -176,6 +112,94 @@ class Controller():
             print "Service call failed: %s" % e
             return
         return 
+
+    def fetchCurrentDummy(self):
+        if(self.curr_dummy_idx >= len(self.position_dummies)):
+            return
+        # Choose the closest dummy
+        dummy = self.position_dummies[self.curr_dummy_idx]
+        dist = numpy.sqrt((self.x - dummy[0] ) ** 2.0 + (self.y - dummy[1]) ** 2.0)
+        if(dist < 0.7):
+            self.curr_dummy_idx += 1
+            dummy = self.position_dummies[self.curr_dummy_idx]
+        return 
+
+    # =======================
+
+    # CONTROL
+    # =======================
+
+    def getTargetThrottle(self):
+        if(self.curr_dummy_idx >= len(self.position_dummies)):
+            self.target_velocity = 0.0
+        velocity_error = self.target_velocity - self.velocity
+        Delta_T = 1.0 / self.update_rate
+        p_term = 0.8 * velocity_error
+        i_term = 0.2 * velocity_error * Delta_T
+        d_term = 0.1 * velocity_error * self.update_rate
+        throttle =  p_term + i_term
+        self.throttle = min(1., max(0., throttle) )
+        return
+
+    def getTargetSteering(self):
+        # Choose the closest dummy
+        dummy = self.position_dummies[self.curr_dummy_idx]
+
+        # Get heading
+        delta_x = (dummy[0] - self.x )
+        delta_y = (dummy[1] - self.y)
+        target_angle = numpy.arctan2(delta_y, delta_x)
+
+        # The robot needs to face the landmark, however it depends on the steering
+        angle_error = target_angle - self.heading
+        #print(angle_error)
+        target_steering = numpy.arctan(self.update_rate * angle_error * self.body_wheel_base_length / (self.body_track_width) )
+        steering_error = target_steering - self.steering
+        #steering_error = angle_error
+        Delta_T = (1. / self.update_rate)
+        # PID
+        p_term = 0.05 * steering_error
+        i_term = 0.8 * steering_error * Delta_T
+        d_term = 0.9 * steering_error * self.update_rate
+        steering = self.steering + p_term + i_term + d_term
+        # Update
+        steering = max(-0.5, min(0.5, steering) ) # MAX STEERING ANGLE IS 0.8727 RAD ~ 50deg
+        self.steering = steering
+        #print(self.steering)
+        return
+
+    # =======================
+
+    # COMUNICATION
+    # ========================
+    
+    def velocityCallback(self, msg):
+        self.velocity = msg.data
+        return
+
+    def getRobotState(self):
+        model_name = "prius"
+        state = self.model_state(model_name, "")
+        orient = state.pose.orientation
+        orient = numpy.array([orient.x, orient.y, orient.z, orient.w])
+        self.x = state.pose.position.x
+        self.y = state.pose.position.y
+        self.z = state.pose.position.z
+        _,_,self.heading = tf.transformations.euler_from_quaternion(orient)
+        curr_pos = numpy.array([self.x , self.y])
+        curr_position_idx = self.curr_dummy_idx
+        S = 0
+        arclength = 0.
+        for idx in range(1, curr_position_idx):
+            dummy_curr = self.position_dummies[idx]
+            dummy_prev = self.position_dummies[idx-1]
+            arclength += numpy.linalg.norm(dummy_curr-dummy_prev)
+        if(curr_position_idx > 0):
+            arclength += numpy.linalg.norm(curr_pos - self.position_dummies[curr_position_idx-1])
+            arclength += numpy.linalg.norm( self.position_dummies[0] )
+        S = arclength
+        self.lin_position = S
+        return
 
     def sendCtrlCmdsToGazebo(self):
         """
@@ -204,11 +228,11 @@ class Controller():
     def loop(self):
         loop_timer = rospy.Rate(self.update_rate)
         while(not rospy.is_shutdown()):
+            self.fetchCurrentDummy()
             self.getRobotState()
             self.getTargetThrottle()
             self.getTargetSteering()
             self.sendCtrlCmdsToGazebo()
-            self.iter+=1
             loop_timer.sleep()
         return
     
