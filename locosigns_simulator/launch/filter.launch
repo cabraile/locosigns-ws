@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+
+    <rosparam command="load" file="$(find locosigns_simulator)/config/simulation_params.yaml" />
+
+    <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen">
+        <remap from="accelerometer_noise_density" to="imu_accelerometer_noise_density"/>
+        <remap from="accelerometer_random_walk" to="imu_accelerometer_random_walk"/>
+    </node>
+    
+</launch>

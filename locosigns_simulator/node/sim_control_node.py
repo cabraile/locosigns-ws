@@ -4,10 +4,10 @@ import numpy
 import rospkg
 import tf
 from gazebo_msgs.srv import SetModelState, GetModelState, SpawnModel
-from locosigns_msg.msg import Scalar, Pose
+from locosigns_msgs.msg import Scalar, Pose
 from prius_msgs.msg import Control
 from gazebo_msgs.msg import ModelState 
-from geometry_msgs.msg import Point, Quaternion
+from geometry_msgs.msg import Point, Quaternion, TwistStamped
 from geometry_msgs.msg import Pose as GeometryPose
 
 class Controller():
@@ -15,15 +15,15 @@ class Controller():
     def __init__(self):
         rospy.init_node("sim_control_node")
         # Load args
-        self.x = rospy.get_param("~x", 0.0)             # meters
-        self.y = rospy.get_param("~y", 0.0)            # meters
-        self.z = rospy.get_param("~z", 0.0)             # meters
-        self.heading = rospy.get_param("~heading", 0.0) # rads
+        self.x = rospy.get_param("x", 0.0)             # meters
+        self.y = rospy.get_param("y", 0.0)            # meters
+        self.z = rospy.get_param("z", 0.0)             # meters
         self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
-        self.steering = rospy.get_param("~steering", 0.0)
-        self.target_velocity = rospy.get_param("~target_velocity",15.0)
+        self.target_velocity = rospy.get_param("target_velocity")
 
         # Init inner vars
+        self.heading = 0.0
+        self.steering = 0.0
         curr_time = rospy.Time.now().to_sec()
         self.velocity = 0.0
         self.lin_position = 0.0
@@ -46,9 +46,9 @@ class Controller():
 
         # Publishers
         self.control_pub = rospy.Publisher('prius', Control, queue_size=1)
-        self.linear_position_pub = rospy.Publisher('/sim_sensor/linear_position', Scalar, queue_size=1)
+        self.linear_position_pub = rospy.Publisher('/sim_sensors/linear_position', Scalar, queue_size=1)
         # Subscribers
-        rospy.Subscriber("/sim_sensor/velocity_groundtruth", Scalar, self.velocityCallback)
+        rospy.Subscriber("/sim_sensors/speedometer_groundtruth", TwistStamped, self.velocityCallback)
 
         # Assures the vehicle did not move by any of the external forces of the simulation
         #self.placeDummiesOnMap()
@@ -174,7 +174,7 @@ class Controller():
     # ========================
     
     def velocityCallback(self, msg):
-        self.velocity = msg.data
+        self.velocity = msg.twist.linear.x
         return
 
     def getRobotState(self):

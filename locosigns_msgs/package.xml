@@ -1,5 +1,5 @@
 <package format="2">
-  <name>locosigns_msg</name>
+  <name>locosigns_msgs</name>
   <version>0.0.1</version>
   <description>
     Filters the robot position on the road given its velocity and detected landmarks

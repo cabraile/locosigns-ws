@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<launch>
+    <param name="robot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
+    
+    <arg name="debug" default="false" />
+    <arg name="gui" default="false" />
+    <arg name="verbose" default="false" />
+    <arg name="paused" default="false"/>
+    <arg name="world_file" default="non_linear_road"/>
+    <arg name="world" default="$(find locosigns_simulator)/worlds/$(arg world_file).world"/>
+
+    <env name="GAZEBO_PLUGIN_PATH" value="$(find locosigns_simulator)/plugins"/>
+    <env name="GAZEBO_MODEL_PATH" value="/home/braile/.gazebo/models"/> 
+
+    <!-- NODES -->
+
+    <!-- Launches world -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch"> <!-- it is 'empty_world' no matter the world you use -->
+        <arg name="world_name" value="$(arg world)"/>
+        <arg name="debug" value="$(arg debug)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="verbose" value="$(arg verbose)"/>
+        <arg name="use_sim_time" value="true"/>
+    </include>
+
+    <!-- Required for control msgs -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <remap from="robot_description" to="robot_model" />
+    </node>
+
+    <!-- Spawn the robot -->
+    <node name="spawn_prius" pkg="gazebo_ros" type="spawn_model" output="screen" 
+        args="-param robot_model -urdf -model prius -x 0 -y 0 -z 0" 
+    />
+    <!-- ======================= -->
+</launch>

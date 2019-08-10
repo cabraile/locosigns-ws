@@ -2,22 +2,23 @@
 import rospy
 from numpy import *
 
-import locosigns_msg.msg
+import locosigns_msgs.msg
 import nav_msgs.msg
+from geometry_msgs.msg import TwistStamped as MsgTwist
 
-class Velocimeter():
+class SpeedometerNode():
 
     def sendMessage(self):
         if(self.velocity is None or self.velocity_n is None):
             return
         # Publish messages
-        true_msg = locosigns_msg.msg.Scalar()
+        true_msg = MsgTwist()
         true_msg.header.stamp = rospy.Time.now()
-        true_msg.data = self.velocity
+        true_msg.twist.linear.x = self.velocity
         self.true_publisher.publish(true_msg)
-        noisy_msg = locosigns_msg.msg.Scalar()
+        noisy_msg = MsgTwist()
         noisy_msg.header.stamp = rospy.Time.now()
-        noisy_msg.data = self.velocity_n
+        noisy_msg.twist.linear.x = self.velocity_n
         self.noisy_publisher.publish(noisy_msg)
         return
 
@@ -56,15 +57,15 @@ class Velocimeter():
 
     def __init__(self):
         # Node initialization
-        rospy.init_node('sim_velocimeter_node')
+        rospy.init_node('sim_speedometer_node')
         # Inner vars initialization
         self.position = None
         self.update_rate = 5 # Hertz
         self.velocity = None
         self.velocity_n = None
         # Publishers
-        self.true_publisher = rospy.Publisher("/sim_sensor/velocity_groundtruth", locosigns_msg.msg.Scalar,queue_size=1)
-        self.noisy_publisher = rospy.Publisher("/sim_sensor/velocity", locosigns_msg.msg.Scalar,queue_size=1)
+        self.true_publisher = rospy.Publisher("/sim_sensors/speedometer_groundtruth", MsgTwist ,queue_size=1)
+        self.noisy_publisher = rospy.Publisher("/sim_sensors/speedometer", MsgTwist ,queue_size=1)
         # Subscription topics
         rospy.Subscriber("/base_pose_ground_truth", nav_msgs.msg.Odometry, self.callback)
         # Loop
@@ -72,4 +73,4 @@ class Velocimeter():
         return
 
 if __name__ == "__main__":
-    Velocimeter()
+    SpeedometerNode()

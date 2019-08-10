@@ -12,7 +12,7 @@ import tf
 import nav_msgs.msg
 import geometry_msgs.msg
 from gazebo_msgs.srv import GetModelState
-from locosigns_msg.msg import Scalar, Landmark, Pose
+from locosigns_msgs.msg import Scalar, Landmark, Pose
 
 class LandmarkDetector():
     
@@ -31,21 +31,22 @@ class LandmarkDetector():
         # Detect
         idx = 0
         for l in self.landmark_list:
-            if(l.detected):
-                continue
+            #if(l.detected):
+            #    continue
             norm =  sqrt((l.position_x - pos.x) ** 2.0 + \
                     (l.position_y - pos.y) ** 2.0 + \
                     (l.position_z - pos.z) ** 2.0)
             dist_true = norm
             idx += 1
             if( dist_true > 0.1 and dist_true < 20):
-                if(last_l is not None and last_l.label == l.label):
-                    continue
+                #if(last_l is not None and last_l.label == l.label):
+                #    continue
                 # There is a chance that the landmark is not detected
                 _p = self.detection_rate
                 will_detect = random.choice([1, 0], 1, p=[_p, 1.0-_p])
                 if(not will_detect):
                     break
+                #rospy.loginfo("--- Detected landmark: {}".format(l_detected.label))
 
                 l_detected = l
                 l_dist = abs(dist_true)
@@ -89,7 +90,7 @@ class LandmarkDetector():
         
         # ROS communication
         rospy.Subscriber("/base_pose_ground_truth", nav_msgs.msg.Odometry, self.poseCallback)
-        self.publisher = rospy.Publisher("/sensor/landmark", Landmark,queue_size=2)
+        self.publisher = rospy.Publisher("/sim_sensors/landmark", Landmark,queue_size=2)
 
         # Loop
         rospy.spin()

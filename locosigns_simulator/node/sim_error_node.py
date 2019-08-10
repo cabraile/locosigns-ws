@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 import rospy
 from numpy import *
-from locosigns_msg.msg import Scalar
+from locosigns_msgs.msg import Scalar, State
 import nav_msgs.msg
 
 class ErrorNode():
 
     def odometryCallback(self, msg):
-        self.odometry = msg.data
+        self.odometry = msg.position
         return
 
     def correctedOdometryCallback(self,msg):
-        self.odometry_corrected = msg.data
+        self.odometry_corrected = msg.position
         return
 
     def trueOdometryCallback(self, msg):
@@ -55,9 +55,9 @@ class ErrorNode():
         self.odom_corrected_error_publisher = rospy.Publisher("/error/odometry_corrected", Scalar,queue_size=1)
 
         # Subscription topics
-        rospy.Subscriber("/state/filter/odometry", Scalar, self.odometryCallback)
-        rospy.Subscriber("/state/filter/odometry_corrected", Scalar, self.correctedOdometryCallback)
-        rospy.Subscriber("/sim_sensor/linear_position", Scalar, self.trueOdometryCallback)
+        rospy.Subscriber("/state/filter/state_complete", State, self.odometryCallback)
+        rospy.Subscriber("/state/filter/state_velocity_correction", State, self.correctedOdometryCallback)
+        rospy.Subscriber("/sim_sensors/linear_position", Scalar, self.trueOdometryCallback)
         
         # Loop
         self.loop()

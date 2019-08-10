@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(locosigns_msg)
+project(locosigns_msgs)
 
 find_package(catkin REQUIRED COMPONENTS message_generation rospy std_msgs geometry_msgs)
 
@@ -8,6 +8,7 @@ add_message_files(
   Scalar.msg
   Landmark.msg
   Pose.msg
+  State.msg
 )
 
 generate_messages(

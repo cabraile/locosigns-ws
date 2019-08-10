@@ -1,90 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <launch>
-    <!-- ARGS AND PARAMS -->
-    <!-- ======================= -->
-    <!-- Gazebo args -->
-    <arg name="debug" default="false" />
-    <arg name="gui" default="false" />
-    <arg name="verbose" default="false" />
-    <arg name="paused" default="false"/>
-    <arg name="world_file" default="non_linear_road"/>
-    <!-- The world in which the robot is spawned -->
-    <!-- The robot's description file to be loaded -->
-    <param name="bot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
-    <!-- Simulation parameters (in the Intarnal Unit Standard)-->
-    <arg name="target_velocity" default="15.0"/>
-    <arg name="spawn_heading" default="0.0"/>
-    <arg name="spawn_x" default="0.0"/>
-    <arg name="spawn_y" default="0.0"/>
-    <arg name="spawn_z" default="0.0"/>
-    <arg name="spawn_direction" default="1"/> <!-- 1=forward; -1=backwards; follows the road direction -->
-    <arg name="spawn_steering" default="0.0"/>
-    <arg name="stdev_landmark" default="10.3334"/> <!-- 1=forward; -1=backwards -->
-    <arg name="landmark_detection_rate" default="1.0"/> <!-- probability of detecting the landmark-->
-    <!-- ======================= -->
 
     <!-- GAZEBO -->
-    <!-- ======================= -->
-    <!-- Include gazebo-ros magic-->
-    <env name="GAZEBO_PLUGIN_PATH" value="$(find locosigns_simulator)/plugins"/>
-    <env name="GAZEBO_MODEL_PATH" value="/home/braile/.gazebo/models"/> 
-    <arg name="world" default="$(find locosigns_simulator)/worlds/$(arg world_file).world"/>
-    <include file="$(find gazebo_ros)/launch/empty_world.launch"> <!-- it is 'empty_world' no matter the world you use -->
-        <arg name="world_name" value="$(arg world)"/>
-        <arg name="debug" value="$(arg debug)"/>
-        <arg name="gui" value="$(arg gui)"/>
-        <arg name="paused" value="$(arg paused)"/>
-        <arg name="use_sim_time" value="true"/>
-        <arg name="verbose" value="$(arg verbose)"/>
-    </include>
-    <!-- Required for control msgs -->
-    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
-        <remap from="robot_description" to="bot_model" />
-    </node>
-    <!-- Spawn the robot -->
-    <node name="spawn_prius" pkg="gazebo_ros" type="spawn_model" output="screen" 
-        args="-param bot_model -urdf -model prius -x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z)" 
-    />
-    <!-- ======================= -->
+    <include file="$(find locosigns_simulator)/launch/gazebo_link.launch"/>
     
     <!-- SIMULATION -->
-    <!-- ======================= -->
-    <!-- Global parameters for simulation -->
-    <param name="direction" value="$(arg spawn_direction)"/>
-    <!-- Delay between the spawning the robot and starting the simulation -->
-    <arg name="node_start_delay" default="10.0" />
-    <!-- Head of the simulation: moves the objects and broadcasts the robot state -->
-    <node pkg="locosigns_simulator" 
-        type="sim_control_node.py" 
-        name="sim_control_node" 
-        output="screen"
-        launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
-    >
-        <param name="x" value="$(arg spawn_x)"/>
-        <param name="y" value="$(arg spawn_y)"/>
-        <param name="z" value="$(arg spawn_z)"/>
-        <param name="heading" value="$(arg spawn_heading)"/>
-        <param name="steering" value="$(arg spawn_steering)"/>
-        <param name="target_velocity" value="$(arg target_velocity)"/>
-    </node>
-    <!-- Simulation of the sensors --> 
-    <node 
-        pkg="locosigns_simulator" 
-        type="sim_landmark_detector_node.py" 
-        name="sim_landmark_detector_node" 
-        output="screen"
-        launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
-    >
-        <param name="detection_rate" value="$(arg landmark_detection_rate)"/>
-        <param name="stdev_landmark" value="$(arg stdev_landmark)"/>
-    </node>
-    <node pkg="locosigns_simulator" type="sim_velocimeter_node.py" name="sim_velocimeter_node"/>
-    <!-- Filter -->
-    <node pkg="locosigns_filter" type="filter_node.py" name="filter_node"  output="screen">
-        <param name="stdev_landmark" value="$(arg stdev_landmark)"/>
-    </node>
-    <!-- Error for comparison -->
-    <node pkg="locosigns_simulator" type="sim_error_node.py" name="sim_error_node"/>
-    <!-- ======================= -->
+    <include file="$(find locosigns_simulator)/launch/sensors_sim.launch"/>
+    
+    <!-- FILTER -->
+    <include file="$(find locosigns_simulator)/launch/filter.launch"/>
+
+    <!-- DEBUG -->
+    <include file="$(find locosigns_simulator)/launch/debug.launch"/>
 </launch>
