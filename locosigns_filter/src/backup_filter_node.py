@@ -79,7 +79,7 @@ class FilterNode():
         ])
 
         R = numpy.array([
-            [(0.3 * v) ** 2.]
+            [(0.1 * v) ** 2.]
         ])
 
         filters_list = [
@@ -96,11 +96,18 @@ class FilterNode():
 
     def landmarkCallback(self, landmark_msg):
         landmark_curr = landmark_msg
+        detected_on = rospy.Time.now()
         landmark_prev = None
         if(self.landmark_curr is None):
             self.landmark_curr = landmark_curr
+            self.detected_on = detected_on
         else:
             landmark_prev = self.landmark_curr
+        Delta_T = 0
+        if(landmark_prev is not None):
+            Delta_T = (landmark_curr.header.stamp - landmark_prev.header.stamp).to_sec()
+            print("LANDMARKS K2={}s | K1={}s".format(landmark_curr.header.stamp.to_sec(), landmark_prev.header.stamp.to_sec()))
+        #Delta_T = (detected_on - self.detected_on).to_sec()
         # for z
         w = landmark_curr.measured_distance
         psi = landmark_curr.heading_angle
@@ -133,7 +140,45 @@ class FilterNode():
                     [pos]
                 ])
                 self.update(filter, z, h, H, R)
+            # Visual odometry update
+            elif(Delta_T > 0):
+                s_prev = self.landmark_states[idx][0,0]
+                def h(X):
+                    X = numpy.array([
+                        [s_prev - X[0,0]],
+                        [X[1,0]]
+                    ])
+                    return X
+                H = numpy.array([
+                    [-1., 0.],
+                    [0., 1.]
+                ])
+                w_prev = landmark_prev.measured_distance
+                psi_prev = landmark_prev.heading_angle
+                d_prev = w_prev * numpy.cos(psi_prev)
+                Delta_S = ( d_prev - d ) * self.direction
+                V_z = Delta_S / Delta_T
+                z = numpy.array([
+                    [Delta_S],
+                    [V_z]
+                ])
+                sigma_Delta_S = 2. * sigma_depth
+                sigma_V_z = sigma_Delta_S / Delta_T
+                R = numpy.array([
+                    [sigma_Delta_S**2, sigma_Delta_S * sigma_V_z],
+                    [sigma_Delta_S * sigma_V_z, sigma_V_z ** 2]
+                ])
+                try:    
+                    print("z=[ [{}, {} ] ]^T, DeltaT ={}".format(z[0,0], z[1,0], Delta_T) )
+                    self.update(filter, z, h, H, R)
+                except numpy.linalg.linalg.LinAlgError:
+                    print("================ UPDATE ===================")
+                    print("R=([ [{}, {} ] ] | H=([ [{}, {} ]".format(R[0,0], R[0,1], H[0,0], H[0,1]) )
+                    print("   [ [{}, {} ] ] |      [{}, {} ]]".format(R[1,0], R[1,1], H[1,0], H[1,1]) )
+                    print("State={}".format(filter.covariance()))
+                    print("===========================================")
                     
+        self.detected_on = detected_on
         self.landmark_states = [ filter.state() for filter in filters_list ] # Stores the state when the landmark was detected - used for the odometry update
         self.landmark_curr = landmark_curr
         return

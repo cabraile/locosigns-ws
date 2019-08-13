@@ -5,7 +5,7 @@
     <rosparam command="load" file="$(find locosigns_simulator)/config/simulation_params.yaml" />
 
     <!-- Delay between the spawning the robot and starting the simulation -->
-    <arg name="node_start_delay" default="10.0" />
+    <arg name="node_start_delay" default="15.0" />
         
     <!-- Control of the simulation: moves the objects and broadcasts the robot state -->
     <node pkg="locosigns_simulator" 
@@ -25,6 +25,7 @@
         output="screen"
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
     >
+        <remap from="stdev_landmark" to="stdev_signs"/>
         <remap from="detection_rate" to="landmark_detection_rate"/>
     </node>
 

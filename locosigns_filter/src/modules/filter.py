@@ -41,7 +41,8 @@ class Filter():
             linalg.inv(H.dot(factor) + R)
         )
         innovation = ( z - h(self.X) )
-        X_est = self.X + K * innovation
+        
+        X_est = self.X + K.dot(innovation)
         P_est = (eye(2) - K.dot(H)).dot(self.P)
         self.X = X_est
         self.P = P_est

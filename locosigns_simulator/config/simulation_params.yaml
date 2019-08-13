@@ -1,5 +1,6 @@
 # ENVIRONMENT SETTINGS
-target_velocity: 15.0         # Target velocity for the robot (in meters per second)
+spawn_y: 500                  # Position world y
+target_velocity: 10.0         # Target velocity for the robot (in meters per second)
 sim_direction: 1              # 1=forward, -1=backwards on the road direction
 stdev_signs: 10.3334          # The standard deviation of the position of each landmark (in meters)
 stdev_depth: 0.1              # The standard deviation of the depth from the depth sensor (in meters)

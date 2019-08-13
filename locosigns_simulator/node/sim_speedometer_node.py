@@ -41,7 +41,7 @@ class SpeedometerNode():
         # Groundtruth
         self.velocity = distance/time_offset
         # Noise
-        noise = ( 0.1 * self.velocity ) * (2.0 * random.rand() - 1.0)
+        noise = ( 0.3 * self.velocity ) * (2.0 * random.rand() - 1.0)
         self.velocity_n = self.velocity + noise
         # Update
         self.position = position

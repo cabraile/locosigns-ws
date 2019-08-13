@@ -51,11 +51,11 @@ class ErrorNode():
         self.odometry_corrected = None
 
         # Publishers
-        self.odom_error_publisher = rospy.Publisher("/error/odometry", Scalar,queue_size=1)
-        self.odom_corrected_error_publisher = rospy.Publisher("/error/odometry_corrected", Scalar,queue_size=1)
+        self.odom_error_publisher = rospy.Publisher("/error/complete_correction", Scalar,queue_size=1)
+        self.odom_corrected_error_publisher = rospy.Publisher("/error/velocity_correction", Scalar,queue_size=1)
 
         # Subscription topics
-        rospy.Subscriber("/state/filter/state_complete", State, self.odometryCallback)
+        rospy.Subscriber("/state/filter/state_complete_correction", State, self.odometryCallback)
         rospy.Subscriber("/state/filter/state_velocity_correction", State, self.correctedOdometryCallback)
         rospy.Subscriber("/sim_sensors/linear_position", Scalar, self.trueOdometryCallback)
         

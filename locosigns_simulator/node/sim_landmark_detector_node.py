@@ -46,24 +46,39 @@ class LandmarkDetector():
                 will_detect = random.choice([1, 0], 1, p=[_p, 1.0-_p])
                 if(not will_detect):
                     break
-                #rospy.loginfo("--- Detected landmark: {}".format(l_detected.label))
 
-                l_detected = l
                 l_dist = abs(dist_true)
                 v2 = array([l.position_x - pos.x , l.position_y - pos.y])
                 v1 = array([cos(self.heading), sin(self.heading)])
                 heading_angle = arccos(dot(v1,v2)/(linalg.norm(v1)*linalg.norm(v2)) )
+                if(heading_angle > pi/6.0):
+                    break 
+                l_detected = l
                 l.detected = True
-                break 
         
-        # Publish if a landmark is detected
         if(l_detected is None):
+            self.current_detection = None
             return
 
-        new_msg = self.prepareMessage(l_detected.label, l_dist, heading_angle)
-        self.publisher.publish(new_msg)
+        self.current_detection = {"label" : l_detected.label, "distance" : l_dist, "heading_angle": heading_angle}
         return
-     
+
+    def run(self):
+        #self.publish(l_detected.label, l_dist, heading_angle)
+        if(self.current_detection is None):
+            return
+        label = self.current_detection["label"]
+        distance = self.current_detection["distance"]
+        heading_angle = self.current_detection["heading_angle"]
+        self.publish(label, distance, heading_angle)
+        return
+        
+    def loop(self):
+        rate = rospy.Rate(self.update_rate)
+        while not rospy.is_shutdown():
+            self.run()
+            rate.sleep()
+        return 
     # ==============================
 
     # SETUP
@@ -81,28 +96,33 @@ class LandmarkDetector():
     def __init__(self):
         # Init ROS and loads parameters
         rospy.init_node("sim_landmark_detector_node")
-        self.detection_rate = rospy.get_param("~detection_rate", 1.0)
-        self.stdev_landmark = rospy.get_param("~stdev_landmark")
+        self.detection_rate = rospy.get_param("detection_rate", 1.0)
+        self.stdev_landmark = rospy.get_param("stdev_landmark")
 
         # Get the list of landmarks on the environment
         self.getLandmarkList()
         self.last_l = None
+        self.update_rate = 10
+
+        self.detected = False
+        self.current_detection = None
         
         # ROS communication
         rospy.Subscriber("/base_pose_ground_truth", nav_msgs.msg.Odometry, self.poseCallback)
         self.publisher = rospy.Publisher("/sim_sensors/landmark", Landmark,queue_size=2)
 
         # Loop
-        rospy.spin()
+        self.loop()
         return
 
-    def prepareMessage(self, label, dist, heading_angle):
+    def publish(self, label, dist, heading_angle):
         _landmark_msg = Landmark()
         _landmark_msg.header.stamp = rospy.Time.now()
         _landmark_msg.label = label
         _landmark_msg.measured_distance = dist
         _landmark_msg.heading_angle = heading_angle
-        return _landmark_msg
+        self.publisher.publish(_landmark_msg)
+        return
 
     def getLandmarkList(self):
         self.model_coordinates = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)

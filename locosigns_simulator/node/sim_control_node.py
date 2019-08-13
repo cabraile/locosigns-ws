@@ -15,25 +15,28 @@ class Controller():
     def __init__(self):
         rospy.init_node("sim_control_node")
         # Load args
-        self.x = rospy.get_param("x", 0.0)             # meters
-        self.y = rospy.get_param("y", 0.0)            # meters
-        self.z = rospy.get_param("z", 0.0)             # meters
+        self.spawn_y = rospy.get_param("spawn_y", 0.0)             # meters
         self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
         self.target_velocity = rospy.get_param("target_velocity")
 
         # Init inner vars
-        self.heading = 0.0
         self.steering = 0.0
         curr_time = rospy.Time.now().to_sec()
         self.velocity = 0.0
         self.lin_position = 0.0
-
+        self.R = 4000.0/numpy.pi
+        self.spawn_x = self.y(self.spawn_y)
+        self.spawn_z = 0.0
+        
+        self.x = self.spawn_x
+        self.y = self.spawn_y
+        self.z = self.spawn_z
+        self.heading = self.theta(self.y)
         # Init args
         self.update_rate = 100.0
         if(self.direction < 0):
             self.heading = numpy.pi -self.heading
 
-        self.heading_direction = 1.0
 
         # Ackermann Steering - based on https://www.xarg.org/book/kinematics/ackerman-steering/
         self.body_wheel_base_length = 2.86012   # Specific to the prius model given (meters)
@@ -55,16 +58,32 @@ class Controller():
         self.placeRobotOnMap()
         return
 
+
+
+    # GENERAL EQUATIONS
+    # =========================================================================
+
+    def y(self, x):
+        if(x <= 2.0 * self.R):
+            return numpy.sqrt((8000.0/numpy.pi) * x - numpy.square(x) )
+        else:
+            return -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(x - (12000.0 / numpy.pi )) )
+        return
+
+    def theta(self, x):
+        return numpy.arcsin(x / self.R)
+
+    # =========================================================================
     # SIMULATION
     # =======================
 
     def spanTargetPositionDummies(self):
         self.position_dummies = []
-        R = 4000.0/numpy.pi
+        R = self.R
         N = 1000.0
         skip = 5
         # Generate both semi-circles
-        X_sc_1 = numpy.linspace(0.0, 2.0 * R, N/skip, endpoint=True)
+        X_sc_1 = numpy.linspace(self.spawn_y, 2.0 * R, N/skip, endpoint=True)
         Y_sc_1 = numpy.sqrt( (8000.0/numpy.pi) * X_sc_1 - numpy.square(X_sc_1) ) # Y values for the first semi-circle
         X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N/skip, endpoint=True)
         Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / numpy.pi )) ) # Y values for the second semi-circle
@@ -96,9 +115,9 @@ class Controller():
         # Gazebo
         state_msg = ModelState()
         state_msg.model_name = 'prius'
-        state_msg.pose.position.x = self.x
-        state_msg.pose.position.y = self.y
-        state_msg.pose.position.z = self.z
+        state_msg.pose.position.x = self.spawn_x
+        state_msg.pose.position.y = self.spawn_y
+        state_msg.pose.position.z = self.spawn_z
         quaternion = tf.transformations.quaternion_from_euler(0.0, 0.0, self.heading)
         state_msg.pose.orientation.x = quaternion[0]
         state_msg.pose.orientation.y = quaternion[1]
@@ -195,8 +214,10 @@ class Controller():
             dummy_prev = self.position_dummies[idx-1]
             arclength += numpy.linalg.norm(dummy_curr-dummy_prev)
         if(curr_position_idx > 0):
-            arclength += numpy.linalg.norm(curr_pos - self.position_dummies[curr_position_idx-1])
             arclength += numpy.linalg.norm( self.position_dummies[0] )
+            arclength += numpy.linalg.norm(curr_pos - self.position_dummies[curr_position_idx-1])
+        else:
+            arclength = numpy.linalg.norm( curr_pos )
         S = arclength
         self.lin_position = S
         return

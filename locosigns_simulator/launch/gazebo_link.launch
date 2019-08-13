@@ -4,7 +4,7 @@
     <param name="robot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
     
     <arg name="debug" default="false" />
-    <arg name="gui" default="false" />
+    <arg name="gui" default="true" />
     <arg name="verbose" default="false" />
     <arg name="paused" default="false"/>
     <arg name="world_file" default="non_linear_road"/>
