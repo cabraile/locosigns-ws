@@ -4,7 +4,11 @@ The _Localization Correction using Signs_ (or LoCoSigns) is a method of location
 
 2 ABOUT THIS REPOSITORY
 ======================
-This workspace contains the ~prototype~ packages used in the LoCoSigns project. The standard is to used catkin-like workspaces and everything else for working with ROS. The __TL;DR__ section summarizes the main topics of this readme. However, if you want to read the full version, Section 4 to 7 provide a detailed description of the topics, parameters, messages and usage. Also, make sure you read the Section __TODO__ at the end of this document for checking if the implementation on its state is applicable for your problem.
+This workspace contains the ~prototype~ packages used in the LoCoSigns project. The standard is to used catkin-like workspaces and everything else for working with ROS. 
+
+On this project, all the variables follow the standard unit system (meters, meters per second, radians and so on).
+
+The __TL;DR__ section summarizes the main topics of this readme. However, if you want to read the full version, Section 4 to 7 provide a detailed description of the topics, parameters, messages and usage. Also, make sure you read the Section __TODO__ at the end of this document for checking if the implementation on its state is applicable for your problem.
 
 P.S. The model used for simulation was downloaded from from [this repository](https://github.com/osrf/car_demo). All `prius_*` packages are the simulation model's packages and can be ignored/removed if you do not intend to perform simulation.
 
@@ -38,16 +42,15 @@ __Publishers.__ The complete estimated state (that fuses IMU, speedometer and la
 The states published are of type `locosigns_msgs/State.msg`.
 
 __Params.__ .
-* `stdev_signs`:.
-* `stdev_depth`:.
-* `stdev_angle`:.
-* `accelerometer_noise_density`:.
-* `accelerometer_random_walk`:.
+* `stdev_signs`: The expected deviation on the signs' true position. Set lower values if you want the localization module to trust more on their indicated position.
+* `stdev_depth`: How precise is the measurement of the depth sensor.
+* `stdev_angle`: Not exactly the standard deviation. It is the maximum angle in which the signs can be detected.
+* `accelerometer_noise_density` and `accelerometer_random_walk`: the additive white noise and the bias of the accelerometer, as detailed [here](https://github.com/ethz-asl/kalibr/wiki/IMU-Noise-Model).
 
 6 CUSTOM MESSAGES
 ======================
-* `locosigns_msgs/State.msg`:.
-* `locosigns_msgs/Landmark.msg`:.
+* `locosigns_msgs/State.msg`: carries the estimated 1D position (float) and the velocity (float) of the robot, as well the covariance matrix (float[4]) of the estimation (stamped).
+* `locosigns_msgs/Landmark.msg`: carries the label (float) of the detected signs, the measured distance (float) from the sensor to the sign and the angle (float) between the heading of the sensor and the center of mass of the signs (stamped). 
 
 7 PACKAGES
 ======================
