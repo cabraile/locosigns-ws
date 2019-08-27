@@ -8,7 +8,7 @@ TL;DR
 
 1 ABOUT THE PROJECT
 ======================
-The _Localization Correction using Signs_ (or LoCoSigns) is a method of location correction that fuses odometry and sign information for estimating the position of the robot in a highway (1D). 
+The _Localization Correction using Signs_ (or LoCoSigns) is a method of location correction that fuses odometry and sign information for estimating the position of the robot in a highway (1D). The paper with more details of the developed method was submitted to the Latin American Robotics Symposium.
 
 2 ABOUT THIS REPOSITORY
 ======================
