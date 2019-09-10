@@ -37,5 +37,5 @@ Launch files that run all nodes and default parameters.
 
 TODO
 ==============================
-- [ ] Add dummy models in the simulated world and detecting them (`sim_landmark_detector_node`).
-- [ ] Path generator
+- [X] Add dummy models in the simulated world and detecting them (`sim_landmark_detector_node`).
+- [X] Path generator
