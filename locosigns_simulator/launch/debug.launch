@@ -5,9 +5,8 @@
     <param name="robot_description" textfile="$(find prius_description)/urdf/prius.urdf"/>
 
     <!-- VISUALIZATION -->
-    <!--
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find locosigns_simulator)/rviz/viz.rviz" />
-    -->
+    <!-- <node type="rviz" name="rviz" pkg="rviz" args="-d $(find locosigns_simulator)/rviz/viz.rviz" /> -->
+    
     <!-- ERROR -->
     <node pkg="locosigns_simulator" type="sim_error_node.py" name="sim_error_node"/>
 </launch>

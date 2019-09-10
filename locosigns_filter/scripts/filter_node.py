@@ -37,32 +37,13 @@ class FilterNode():
     # =========================================================================
 
     def imuCallback(self, imu_msg):
-        # Time
-        time_curr = rospy.Time.now()
-        if(self.last_imu_callback is None):
-            self.last_imu_callback = time_curr
-            return
-
         a = imu_msg.linear_acceleration.x
-        Delta_T = (time_curr - self.last_imu_callback).to_sec()
-        if(Delta_T == 0):
-            return
-        A = numpy.array([
-            [1., Delta_T],
-            [0., 1.]
-        ])
-        B = numpy.array([
-            [ ((Delta_T)**2.)/2. ],
-            [ Delta_T ]
-        ])
-        sqrt_Delta_T = numpy.sqrt(Delta_T)
+        sqrt_Delta_T = numpy.sqrt(self.imu_update_period)
         self.accelerometer_bias += self.accelerometer_random_walk * sqrt_Delta_T
         sigma_accel =   self.accelerometer_noise_density * ( 1./sqrt_Delta_T ) + self.accelerometer_bias
-        Q = (B.dot( sigma_accel**2. )).dot(B.transpose())
-        self.predict(A, B, a, Q)
-
-        # Time
-        self.last_imu_callback = time_curr
+        Q = (self.B.dot( sigma_accel**2. )).dot(self.B.transpose())
+        self.predict(self.A, self.B, a, Q)
+        self.publish()
         return
 
     def speedometerCallback(self, speedometer_msg):
@@ -157,19 +138,7 @@ class FilterNode():
             self.filter_publishers[name].publish(msg)
         return 
 
-    def run(self):
-        self.publish()
-        return
-
-    def loop(self):
-        rate = rospy.Rate(self.update_rate)
-        while not rospy.is_shutdown():
-            self.run()
-            rate.sleep()
-        return 
-
     def setup(self):
-        rospy.init_node("filter_node", anonymous=False)
         self.getROSParam()
         self.initVars()
         self.initFilters()
@@ -182,12 +151,13 @@ class FilterNode():
     # =========================================================================
 
     def getROSParam(self):
-        self.stdev_landmark = rospy.get_param("stdev_signs") # (meters)^2
-        self.stdev_depth    = rospy.get_param("stdev_depth") # (meters)^2
-        self.stdev_angle    = rospy.get_param("stdev_angle") # (meters)^2
-        self.update_rate    = rospy.get_param("update_rate",100) # Hertz
-        self.accelerometer_noise_density = rospy.get_param("accelerometer_noise_density")
-        self.accelerometer_random_walk = rospy.get_param("accelerometer_random_walk")
+        self.stdev_landmark = rospy.get_param("~stdev_landmark") # (meters)^2
+        self.stdev_depth    = rospy.get_param("~stdev_depth") # (meters)^2
+        self.stdev_angle    = rospy.get_param("~stdev_angle") # (meters)^2
+        self.direction      = rospy.get_param("~direction") # -1 (backwards) or 1 (forward)
+        self.imu_update_rate    = rospy.get_param("~imu_update_rate") # Hertz
+        self.accelerometer_noise_density = rospy.get_param("~accelerometer_noise_density")
+        self.accelerometer_random_walk = rospy.get_param("~accelerometer_random_walk")
 
         # Inner vars for the filter
         self.state_init     = numpy.array([[0.0],[0.0]])
@@ -195,12 +165,22 @@ class FilterNode():
         return
 
     def initVars(self):
-        self.period             = 1./self.update_rate
+        self.imu_update_period  = 1./self.imu_update_rate
         self.landmark_curr      = None
-        self.velocity_curr      = 0
-        self.direction          = 1 # TODO: detect direction
-        self.last_imu_callback  = None
-        self.accelerometer_bias = 0
+        self.velocity_curr      = 0.
+        self.accelerometer_bias = 0.
+
+        # KF
+        Delta_T = self.imu_update_period
+        self.A = numpy.array([
+            [1., self.direction * Delta_T],
+            [0., 1.]
+        ])
+        
+        self.B = numpy.array([
+            [ self.direction * ((Delta_T)**2.)/2. ],
+            [ Delta_T ]
+        ])
         return 
 
     def initFilters(self):
@@ -215,14 +195,13 @@ class FilterNode():
         self.filter_publishers = {}
         for name in self.filter_names:
             self.filters[name] = Filter(self.state_init, self.state_cov_init)
-            self.filter_publishers[name] = rospy.Publisher("state/filter/state_{}".format(name), MsgState, queue_size=1)
-        self.imu_pub = rospy.Publisher("sim_sensor/imu_pose", MsgPose, queue_size=1)
+            self.filter_publishers[name] = rospy.Publisher("vehicle/state/filter/state_{}".format(name), MsgState, queue_size=1)
         return
 
     def setCallback(self):
-        rospy.Subscriber("sim_sensors/imu"          ,  MsgImu,      self.imuCallback)
-        rospy.Subscriber("sim_sensors/speedometer"  ,  MsgTwist,    self.speedometerCallback)
-        rospy.Subscriber("sim_sensors/landmark"     ,  MsgLandmark, self.landmarkCallback)
+        rospy.Subscriber("vehicle/sensor/imu"          ,  MsgImu,      self.imuCallback)
+        rospy.Subscriber("vehicle/sensor/speedometer"  ,  MsgTwist,    self.speedometerCallback)
+        rospy.Subscriber("vehicle/perception/landmark"     ,  MsgLandmark, self.landmarkCallback)
         return
 
     # =========================================================================
@@ -231,18 +210,18 @@ class FilterNode():
     # =========================================================================
     
     def debug(self, msg):
-        rospy.loginfo("[filter_node.py] {}".format(msg))
+        rospy.loginfo("[FilterNode] {}".format(msg))
         return
     
-    def __init__(self, run=True):
+    def __init__(self):
         self.setup()
-        if(run):
-            self.loop()
+        rospy.spin()
         return
 
     # =========================================================================
 
 if __name__=="__main__":
+    rospy.init_node("filter_node", anonymous=False)
     node = FilterNode()
 
     

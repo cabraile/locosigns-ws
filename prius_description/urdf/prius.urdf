@@ -599,7 +599,7 @@
       <visualize>true</visualize>
       <topic>imu</topic>
       <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
-        <topicName>sim_sensors/imu</topicName>
+        <topicName>vehicle/sensor/imu</topicName>
         <bodyName>imu_link</bodyName>
         <updateRateHZ>100.0</updateRateHZ>
         <gaussianNoise>0.083</gaussianNoise>

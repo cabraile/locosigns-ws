@@ -4,6 +4,8 @@ This workspace contains the packages used in the LoCoSigns project. The standard
 
 All `prius_*` packages where downloaded from [this repository](https://github.com/osrf/car_demo).
 
+Requires Gazebo 9 for launching simulation files.
+
 PACKAGES
 ======================
 The list of packages implemented for this project (except the `prius_*` packages) are listed below. A description for each package can be found on their individual directory.

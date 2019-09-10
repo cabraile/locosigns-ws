@@ -5,9 +5,7 @@ find_package(catkin REQUIRED COMPONENTS message_generation rospy std_msgs geomet
 
 add_message_files(
   FILES
-  Scalar.msg
   Landmark.msg
-  Pose.msg
   State.msg
 )
 

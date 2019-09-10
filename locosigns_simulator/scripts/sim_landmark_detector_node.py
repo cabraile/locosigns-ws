@@ -12,7 +12,7 @@ import tf
 import nav_msgs.msg
 import geometry_msgs.msg
 from gazebo_msgs.srv import GetModelState
-from locosigns_msgs.msg import Scalar, Landmark, Pose
+from locosigns_msgs.msg import Landmark
 
 class LandmarkDetector():
     
@@ -95,9 +95,8 @@ class LandmarkDetector():
 
     def __init__(self):
         # Init ROS and loads parameters
-        rospy.init_node("sim_landmark_detector_node")
-        self.detection_rate = rospy.get_param("detection_rate", 1.0)
-        self.stdev_landmark = rospy.get_param("stdev_landmark")
+        self.detection_rate = rospy.get_param("~detection_rate")
+        self.stdev_landmark = rospy.get_param("~stdev_landmark")
 
         # Get the list of landmarks on the environment
         self.getLandmarkList()
@@ -109,7 +108,7 @@ class LandmarkDetector():
         
         # ROS communication
         rospy.Subscriber("/base_pose_ground_truth", nav_msgs.msg.Odometry, self.poseCallback)
-        self.publisher = rospy.Publisher("/sim_sensors/landmark", Landmark,queue_size=2)
+        self.publisher = rospy.Publisher("/vehicle/perception/landmark", Landmark,queue_size=2)
 
         # Loop
         self.loop()
@@ -140,4 +139,6 @@ class LandmarkDetector():
     # ==============================
 
 if __name__ == "__main__":
+    rospy.init_node("sim_landmark_detector_node")
     LandmarkDetector()
+        

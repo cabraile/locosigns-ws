@@ -4,14 +4,14 @@
     <param name="robot_model" textfile="$(find prius_description)/urdf/prius.urdf"/>
     
     <arg name="debug" default="false" />
-    <arg name="gui" default="true" />
+    <arg name="gui" default="false" />
     <arg name="verbose" default="false" />
     <arg name="paused" default="false"/>
     <arg name="world_file" default="non_linear_road"/>
     <arg name="world" default="$(find locosigns_simulator)/worlds/$(arg world_file).world"/>
 
     <env name="GAZEBO_PLUGIN_PATH" value="$(find locosigns_simulator)/plugins"/>
-    <env name="GAZEBO_MODEL_PATH" value="/home/braile/.gazebo/models"/> 
+    <env name="GAZEBO_MODEL_PATH" value="/home/andre/.gazebo/models"/> 
 
     <!-- NODES -->
 

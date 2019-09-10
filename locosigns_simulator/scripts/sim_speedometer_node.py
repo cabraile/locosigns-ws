@@ -56,16 +56,14 @@ class SpeedometerNode():
         return
 
     def __init__(self):
-        # Node initialization
-        rospy.init_node('sim_speedometer_node')
         # Inner vars initialization
         self.position = None
         self.update_rate = 5 # Hertz
         self.velocity = None
         self.velocity_n = None
         # Publishers
-        self.true_publisher = rospy.Publisher("/sim_sensors/speedometer_groundtruth", MsgTwist ,queue_size=1)
-        self.noisy_publisher = rospy.Publisher("/sim_sensors/speedometer", MsgTwist ,queue_size=1)
+        self.true_publisher = rospy.Publisher("/vehicle/state/groundtruth/velocity", MsgTwist ,queue_size=1)
+        self.noisy_publisher = rospy.Publisher("/vehicle/sensor/speedometer", MsgTwist ,queue_size=1)
         # Subscription topics
         rospy.Subscriber("/base_pose_ground_truth", nav_msgs.msg.Odometry, self.callback)
         # Loop
@@ -73,4 +71,6 @@ class SpeedometerNode():
         return
 
 if __name__ == "__main__":
+    # Node initialization
+    rospy.init_node('sim_speedometer_node')
     SpeedometerNode()

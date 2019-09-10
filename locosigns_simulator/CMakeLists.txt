@@ -24,7 +24,7 @@ catkin_package(
     LIBRARIES
 )
 
-catkin_install_python(PROGRAMS node/sim_control_node.py
+catkin_install_python(PROGRAMS scripts/sim_control_node.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS PriusHybridPlugin

@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <launch>
-
-    <rosparam command="load" file="$(find locosigns_simulator)/config/simulation_params.yaml" />
-
     <!-- Delay between the spawning the robot and starting the simulation -->
     <arg name="node_start_delay" default="15.0" />
-        
+    <arg name="direction" default="forward"/>    
+    
     <!-- Control of the simulation: moves the objects and broadcasts the robot state -->
     <node pkg="locosigns_simulator" 
-        type="sim_control_node.py" 
+        type="sim_control_node_$(arg direction).py" 
         name="sim_control_node" 
         output="screen"
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
     >
-        <remap from="direction" to="sim_direction"/>
+        <rosparam command="load" file="$(find locosigns_simulator)/config/simulation_params.yaml" />
     </node>
 
     <!-- Simulation of the landmark detection module --> 
@@ -25,8 +23,7 @@
         output="screen"
         launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' "
     >
-        <remap from="stdev_landmark" to="stdev_signs"/>
-        <remap from="detection_rate" to="landmark_detection_rate"/>
+        <rosparam command="load" file="$(find locosigns_simulator)/config/simulation_params.yaml" />
     </node>
 
     <!-- Simulates the speedometer -->

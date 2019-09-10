@@ -4,20 +4,18 @@ import numpy
 import rospkg
 import tf
 from gazebo_msgs.srv import SetModelState, GetModelState, SpawnModel
-from locosigns_msgs.msg import Scalar, Pose
 from prius_msgs.msg import Control
 from gazebo_msgs.msg import ModelState 
-from geometry_msgs.msg import Point, Quaternion, TwistStamped
+from geometry_msgs.msg import Point, Quaternion, PointStamped, TwistStamped
 from geometry_msgs.msg import Pose as GeometryPose
 
 class Controller():
 
     def __init__(self):
-        rospy.init_node("sim_control_node")
         # Load args
-        self.spawn_y = rospy.get_param("spawn_y", 0.0)             # meters
-        self.direction = rospy.get_param("direction", 1)# 1=forward, -1=backwards
-        self.target_velocity = rospy.get_param("target_velocity")
+        self.spawn_y = rospy.get_param("~spawn_y")             # meters
+        self.direction = rospy.get_param("~direction")# 1=forward, -1=backwards
+        self.target_velocity = rospy.get_param("~target_velocity")
 
         # Init inner vars
         self.steering = 0.0
@@ -49,9 +47,9 @@ class Controller():
 
         # Publishers
         self.control_pub = rospy.Publisher('prius', Control, queue_size=1)
-        self.linear_position_pub = rospy.Publisher('/sim_sensors/linear_position', Scalar, queue_size=1)
+        self.linear_position_pub = rospy.Publisher('/vehicle/state/groundtruth/position', PointStamped, queue_size=1)
         # Subscribers
-        rospy.Subscriber("/sim_sensors/speedometer_groundtruth", TwistStamped, self.velocityCallback)
+        rospy.Subscriber("/vehicle/state/groundtruth/velocity", TwistStamped, self.velocityCallback)
 
         # Assures the vehicle did not move by any of the external forces of the simulation
         #self.placeDummiesOnMap()
@@ -81,9 +79,10 @@ class Controller():
         self.position_dummies = []
         R = self.R
         N = 1000.0
+        offset = 2.0 * self.R / N
         skip = 5
         # Generate both semi-circles
-        X_sc_1 = numpy.linspace(self.spawn_y, 2.0 * R, N/skip, endpoint=True)
+        X_sc_1 = numpy.linspace(self.spawn_y + offset, 2.0 * R, N/skip, endpoint=True)
         Y_sc_1 = numpy.sqrt( (8000.0/numpy.pi) * X_sc_1 - numpy.square(X_sc_1) ) # Y values for the first semi-circle
         X_sc_2 = numpy.linspace(2.0 * R, 4.0 * R, N/skip, endpoint=True)
         Y_sc_2 = -numpy.sqrt( (4000.0/numpy.pi)**2 - numpy.square(X_sc_2 - (12000.0 / numpy.pi )) ) # Y values for the second semi-circle
@@ -97,7 +96,7 @@ class Controller():
     def placeDummiesOnMap(self):
         rospy.wait_for_service("gazebo/spawn_sdf_model")
         spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
-        with open("/home/braile/.gazebo/models/construction_cone/model.sdf", "r") as f:
+        with open("/home/andre/.gazebo/models/construction_cone/model.sdf", "r") as f:
             model_xml = f.read()
         #for idx in range(30):
         for idx in range(len(self.position_dummies)):
@@ -171,7 +170,6 @@ class Controller():
 
         # The robot needs to face the landmark, however it depends on the steering
         angle_error = target_angle - self.heading
-        #print(angle_error)
         target_steering = numpy.arctan(self.update_rate * angle_error * self.body_wheel_base_length / (self.body_track_width) )
         steering_error = target_steering - self.steering
         #steering_error = angle_error
@@ -184,7 +182,6 @@ class Controller():
         # Update
         steering = max(-0.5, min(0.5, steering) ) # MAX STEERING ANGLE IS 0.8727 RAD ~ 50deg
         self.steering = steering
-        #print(self.steering)
         return
 
     # =======================
@@ -235,9 +232,9 @@ class Controller():
         command_msg.steer = steer
         self.control_pub.publish(command_msg)
 
-        position_msg = Scalar()
+        position_msg = PointStamped()
         position_msg.header.stamp = rospy.get_rostime()
-        position_msg.data = self.lin_position
+        position_msg.point.x = self.lin_position
         self.linear_position_pub.publish(position_msg)
         return
 
@@ -260,4 +257,5 @@ class Controller():
     # ========================
 
 if __name__ == '__main__':
+    rospy.init_node("sim_control_node")
     Controller().loop()
