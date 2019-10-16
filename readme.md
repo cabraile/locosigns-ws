@@ -52,14 +52,9 @@ __Params.__ .
 * `locosigns_msgs/State.msg`: carries the estimated 1D position (float) and the velocity (float) of the robot, as well the covariance matrix (float[4]) of the estimation (stamped).
 * `locosigns_msgs/Landmark.msg`: carries the label (float) of the detected signs, the measured distance (float) from the sensor to the sign and the angle (float) between the heading of the sensor and the center of mass of the signs (stamped). 
 
-<<<<<<< HEAD
-Requires Gazebo 9 for launching simulation files.
 
-PACKAGES
-=======
 6 PACKAGES
->>>>>>> ece97daab20ffe8ef099da2a1805b6ff910844a2
-======================
+=======
 The list of packages implemented for this project (except the `prius_*` packages) are listed below. A description for each package can be found on their individual directory.
 * `locosigns_simulator`: provides a simulated environment, sensors a trajectory for the robot
 to move in the simulation.
@@ -69,12 +64,8 @@ to move in the simulation.
 
 TODO
 ======================
-<<<<<<< HEAD
-- [ ] Pending list in `locosigns_simulator`
-=======
 - [X] Pending list in `locosigns_simulator`.
 - [ ] Implement correction for the opposite direction as well.
 - [ ] C++ implementation of the filter.
 - [ ] Consistent prediction even when no IMU data is received.
 - [ ] Make initial state, covariance and direction be setted using rosparams.
->>>>>>> ece97daab20ffe8ef099da2a1805b6ff910844a2
