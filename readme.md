@@ -65,7 +65,6 @@ to move in the simulation.
 TODO
 ======================
 - [X] Pending list in `locosigns_simulator`.
-- [ ] Implement correction for the opposite direction as well.
+- [X] Implement correction for the opposite direction as well.
 - [ ] C++ implementation of the filter.
-- [ ] Consistent prediction even when no IMU data is received.
 - [ ] Make initial state, covariance and direction be setted using rosparams.
